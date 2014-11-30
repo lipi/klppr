@@ -12,6 +12,9 @@ import requests
 from requests.auth import HTTPDigestAuth
 from requests.adapters import HTTPAdapter
 
+from PIL import Image
+from StringIO import StringIO
+
 class JVC:
     
     def __init__(self, host='192.168.1.1', user='root', password='password'):
@@ -20,31 +23,31 @@ class JVC:
         self.session.auth = HTTPDigestAuth(user, password)
         self.url = 'http://%s' % self.host
         self.session.mount(self.url, HTTPAdapter(max_retries=5))
+        self.cookies = self.session.cookies
         # maybe auto-login?
 
     def get(self, uri='/'):
         url = self.url + uri
-        try:
-            r = self.session.get(url)
-        except requests.exceptions.ConnectionError as err:
-            print err
-            self.session = requests.session()
-            r = self.session.get(url)
-        return r
+        # new session for every GET
+        session = requests.session()
+        session.auth = self.session.auth
+        session.cookies = self.cookies
+        response = session.get(url)
+        return response
 
     def post(self, uri='/'):
         url = self.host + uri
-        try:
-            r = self.session.post(url)
-        except requests.exceptions.ConnectionError as err:
-            print err
-            self.session = requests.session()
-            r = self.session.post(url)
-        return r
+        # new session for every POST
+        session = requests.session()
+        session.auth = self.session.auth
+        session.cookies = self.cookies
+        response = session.post(url)
+        return response
 
     def login(self):
         r = self.get('/php/session_start.php')
         if r.ok:
+            print 'login OK'
             self.start_kicking()
         else:
             print 'login failed'
@@ -58,17 +61,16 @@ class JVC:
         self.cont = False
 
     def kick(self):
-        '''Keep kicking the camera to avoid disconnecting us (after 30 sec)'''
+        '''Keep opening new sessions same as the web app as does'''
         if self.cont:
             r1 = self.get('/php/session_continue.php')
             r2 = self.get('/php/get_error_code.php')
             r3 = self.get('/cgi-bin/camera_status.cgi')
             if r1.ok and r2.ok and r3.ok:
-                pass
-                #print 'kick OK'
+                print 'kick OK'
             else:
-                print 'kick failed' 
-            Timer(5, self.kick).start()
+                print 'kick failed'
+            Timer(10, self.kick).start()
 
     def logout(self):
         self.stop_kicking()
@@ -83,8 +85,6 @@ class JVC:
         print r.reason
         return self.getptz()
 
-    'POST /cgi-bin/cmd.cgi HTTP/1.1\r\nHost: 192.168.3.103\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:33.0) Gecko/20100101 Firefox/33.0\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate\r\nContent-Type: application/json; charset=UTF-8\r\nReferer: http://192.168.3.103/php/monitor.php\r\nContent-Length: 72\r\nCookie: EverioServer=b190035a65812a0ab6e45964e54aa164\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\n\r\n{"Command":"SetZoomPosition","Params":{"DeciZoomPosition":13,"Speed":3}}'
-
     def zoom(self, zoom=10, speed=1):
         cmd = {"DeciZoomPosition":zoom, "Speed":speed}
         payload = {"Command": "SetZoomPosition", "Params":cmd }
@@ -95,12 +95,16 @@ class JVC:
 
     def getptz(self):
         r = self.get('/cgi-bin/ptz_position.cgi')
-        j = r.json()
-        data = j['Data']
-        pan = data['PanPosition']
-        tilt = data['TiltPosition']
-        zoom = data['DeciZoomPosition']
-        return pan,tilt,zoom
+        if r.ok:
+            j = r.json()
+            data = j['Data']
+            pan = data['PanPosition']
+            tilt = data['TiltPosition']
+            zoom = data['DeciZoomPosition']
+            result = (pan,tilt,zoom)
+        else:
+            result = r
+        return result
 
     def getstatus(self):
         r = self.get('/cgi-bin/camera_status.cgi')
@@ -108,17 +112,28 @@ class JVC:
         print j['Data']['SdcardRemains']
         return
 
-
     def getjpg(self):
         r = self.get('/cgi-bin/get_jpg.cgi')
         return r
 
+    def savejpg(self, response):
+        print 'response:', str(response.content)[:40]
+        try:
+            img = Image.open(StringIO(response.content))
+            img.save('x.bmp')
+        except IOError as ex:
+            print ex
 
     def test(self, tries=60):
         self.login()
         for i in range(tries):
-            print i, self.getptz()
-            self.getjpg()
+            print i, self.getptz(),
+            sys.stdout.flush()
+#            r = self.getjpg()
+#            if r.ok:
+#                self.savejpg(r)
+#            else:
+#                print r
             time.sleep(1)
 
 if __name__ == '__main__':
@@ -129,4 +144,8 @@ if __name__ == '__main__':
 
     j = JVC(host)
 
-    j.test(3600 * 10)
+    try:
+        j.test(3600 * 10)
+    except KeyboardInterrupt:
+        j.logout()
+
