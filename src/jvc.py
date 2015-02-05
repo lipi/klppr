@@ -35,13 +35,14 @@ class JVC:
         response = session.get(url)
         return response
 
-    def post(self, uri='/'):
-        url = self.host + uri
+    def post(self, uri, data):
+        url = self.url + uri
+        print 'POST', url, data
         # new session for every POST
         session = requests.session()
         session.auth = self.session.auth
         session.cookies = self.cookies
-        response = session.post(url)
+        response = session.post(url, data=data)
         return response
 
     def login(self):
@@ -69,7 +70,7 @@ class JVC:
             if r1.ok and r2.ok and r3.ok:
                 print 'kick OK'
             else:
-                print 'kick failed'
+                print 'kick failed', r1, r2, r3
             Timer(10, self.kick).start()
 
     def logout(self):
@@ -129,6 +130,7 @@ class JVC:
         for i in range(tries):
             print i, self.getptz(),
             sys.stdout.flush()
+            self.pantilt((i % 100) - 50, 0)
 #            r = self.getjpg()
 #            if r.ok:
 #                self.savejpg(r)
