@@ -15,6 +15,9 @@ from requests.adapters import HTTPAdapter
 from PIL import Image
 from StringIO import StringIO
 
+def timestamp():
+    return int(time.time() * 1000)
+
 class JVC:
     
     def __init__(self, host='192.168.1.1', user='root', password='password'):
@@ -50,6 +53,9 @@ class JVC:
         if r.ok:
             print 'login OK'
             self.start_kicking()
+            self.get('/php/monitor.php')
+            self.get('/cgi-bin/hello.cgi')
+            self.get('/cgi-bin/resource_release.cgi?param=mjpeg&%d' % timestamp())
         else:
             print 'login failed'
         return r.ok
@@ -114,14 +120,14 @@ class JVC:
         return
 
     def getjpg(self):
-        r = self.get('/cgi-bin/get_jpg.cgi')
+        uri = '/cgi-bin/get_jpg.cgi?{}'.format(timestamp())
+        r = self.get(uri)
         return r
 
-    def savejpg(self, response):
-        print 'response:', str(response.content)[:40]
+    def savejpg(self, response, filename='x.jpg'):
         try:
             img = Image.open(StringIO(response.content))
-            img.save('x.bmp')
+            img.save(filename)
         except IOError as ex:
             print ex
 
@@ -131,11 +137,11 @@ class JVC:
             print i, self.getptz(),
             sys.stdout.flush()
             self.pantilt((i % 100) - 50, 0)
-#            r = self.getjpg()
-#            if r.ok:
-#                self.savejpg(r)
-#            else:
-#                print r
+            r = self.getjpg()
+            if r.ok:
+                self.savejpg(r)
+            else:
+                print r
             time.sleep(1)
 
 if __name__ == '__main__':
