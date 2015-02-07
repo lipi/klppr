@@ -18,6 +18,14 @@ from StringIO import StringIO
 def timestamp():
     return int(time.time() * 1000)
 
+def add_timestamp(url):
+    if ('cgi' in url):
+        if '?' in url:
+            url += '&{}'.format(timestamp())
+        else:
+            url += '?{}'.format(timestamp())
+    return url
+
 class JVC:
     
     def __init__(self, host='192.168.1.1', user='root', password='password'):
@@ -31,6 +39,7 @@ class JVC:
 
     def get(self, uri='/'):
         url = self.url + uri
+        url = add_timestamp(url)
         # new session for every GET
         session = requests.session()
         session.auth = self.session.auth
@@ -38,9 +47,11 @@ class JVC:
         response = session.get(url)
         return response
 
-    def post(self, uri, data):
+    def post(self, uri, data, debug=False):
         url = self.url + uri
-        print 'POST', url, data
+        url = add_timestamp(url)
+        if debug:
+            print 'POST', url, data
         # new session for every POST
         session = requests.session()
         session.auth = self.session.auth
@@ -48,14 +59,15 @@ class JVC:
         response = session.post(url, data=data)
         return response
 
-    def login(self):
+    def login(self, debug=False):
         r = self.get('/php/session_start.php')
         if r.ok:
-            print 'login OK'
+            if debug:
+                print 'login OK'
             self.start_kicking()
             self.get('/php/monitor.php')
-            self.get('/cgi-bin/hello.cgi')
-            self.get('/cgi-bin/resource_release.cgi?param=mjpeg&%d' % timestamp())
+            self.get('/cgi-bin/hello.cgi') # must have for get_jpg
+            self.get('/cgi-bin/resource_release.cgi?param=mjpeg') # needed?
         else:
             print 'login failed'
         return r.ok
@@ -67,14 +79,15 @@ class JVC:
     def stop_kicking(self):
         self.cont = False
 
-    def kick(self):
+    def kick(self, debug=False):
         '''Keep opening new sessions same as the web app as does'''
         if self.cont:
             r1 = self.get('/php/session_continue.php')
             r2 = self.get('/php/get_error_code.php')
             r3 = self.get('/cgi-bin/camera_status.cgi')
             if r1.ok and r2.ok and r3.ok:
-                print 'kick OK'
+                if debug:
+                    print 'kick OK'
             else:
                 print 'kick failed', r1, r2, r3
             Timer(10, self.kick).start()
@@ -83,21 +96,23 @@ class JVC:
         self.stop_kicking()
         self.get('/php/session_finish.php')
 
-    def pantilt(self, pan=0, tilt=0):
+    def pantilt(self, pan=0, tilt=0, debug=False):
         cmd = {"Cmd":0,"Pan":pan,"Tilt":tilt}
         payload = {"Command":"SetPTCtrl",
                               "Params": cmd}
         r = self.post('/cgi-bin/cmd.cgi',
                       data = json.dumps(payload))
-        print r.reason
+        if debug:
+            print r.reason
         return self.getptz()
 
-    def zoom(self, zoom=10, speed=1):
+    def zoom(self, zoom=10, speed=1, debug=False):
         cmd = {"DeciZoomPosition":zoom, "Speed":speed}
         payload = {"Command": "SetZoomPosition", "Params":cmd }
         r = self.post('/cgi-bin/cmd.cgi', 
                       data = json.dumps(payload))
-        print r.reason
+        if debug:
+            print r.reason
         return self.getptz()
 
     def getptz(self):
@@ -113,15 +128,15 @@ class JVC:
             result = r
         return result
 
-    def getstatus(self):
+    def getstatus(self, debug=False):
         r = self.get('/cgi-bin/camera_status.cgi')
         j = r.json()
-        print j['Data']['SdcardRemains']
+        if debug:
+            print j['Data']['SdcardRemains']
         return
 
     def getjpg(self):
-        uri = '/cgi-bin/get_jpg.cgi?{}'.format(timestamp())
-        r = self.get(uri)
+        r = self.get('/cgi-bin/get_jpg.cgi')
         return r
 
     def savejpg(self, response, filename='x.jpg'):
@@ -134,7 +149,7 @@ class JVC:
     def test(self, tries=60):
         self.login()
         for i in range(tries):
-            print i, self.getptz(),
+            print i, self.getptz()
             sys.stdout.flush()
             self.pantilt((i % 100) - 50, 0)
             r = self.getjpg()
