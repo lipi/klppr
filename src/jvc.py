@@ -35,6 +35,7 @@ class JVC:
         self.url = 'http://%s' % self.host
         self.session.mount(self.url, HTTPAdapter(max_retries=5))
         self.cookies = self.session.cookies
+        self.debug = True
         # maybe auto-login?
 
     def get(self, uri='/'):
@@ -47,10 +48,10 @@ class JVC:
         response = session.get(url)
         return response
 
-    def post(self, uri, data, debug=False):
+    def post(self, uri, data):
         url = self.url + uri
         url = add_timestamp(url)
-        if debug:
+        if self.debug:
             print 'POST', url, data
         # new session for every POST
         session = requests.session()
@@ -59,10 +60,10 @@ class JVC:
         response = session.post(url, data=data)
         return response
 
-    def login(self, debug=False):
+    def login(self):
         r = self.get('/php/session_start.php')
         if r.ok:
-            if debug:
+            if self.debug:
                 print 'login OK'
             self.start_kicking()
             self.get('/php/monitor.php')
@@ -79,14 +80,14 @@ class JVC:
     def stop_kicking(self):
         self.cont = False
 
-    def kick(self, debug=False):
+    def kick(self):
         '''Keep opening new sessions same as the web app as does'''
         if self.cont:
             r1 = self.get('/php/session_continue.php')
             r2 = self.get('/php/get_error_code.php')
             r3 = self.get('/cgi-bin/camera_status.cgi')
             if r1.ok and r2.ok and r3.ok:
-                if debug:
+                if self.debug:
                     print 'kick OK'
             else:
                 print 'kick failed', r1, r2, r3
@@ -96,22 +97,22 @@ class JVC:
         self.stop_kicking()
         self.get('/php/session_finish.php')
 
-    def pantilt(self, pan=0, tilt=0, debug=False):
+    def pantilt(self, pan=0, tilt=0):
         cmd = {"Cmd":0,"Pan":pan,"Tilt":tilt}
         payload = {"Command":"SetPTCtrl",
                               "Params": cmd}
         r = self.post('/cgi-bin/cmd.cgi',
                       data = json.dumps(payload))
-        if debug:
+        if self.debug:
             print r.reason
         return self.getptz()
 
-    def zoom(self, zoom=10, speed=1, debug=False):
+    def zoom(self, zoom=10, speed=1):
         cmd = {"DeciZoomPosition":zoom, "Speed":speed}
         payload = {"Command": "SetZoomPosition", "Params":cmd }
         r = self.post('/cgi-bin/cmd.cgi', 
                       data = json.dumps(payload))
-        if debug:
+        if self.debug:
             print r.reason
         return self.getptz()
 
@@ -128,35 +129,33 @@ class JVC:
             result = r
         return result
 
-    def getstatus(self, debug=False):
+    def getstatus(self):
         r = self.get('/cgi-bin/camera_status.cgi')
         j = r.json()
-        if debug:
+        if self.debug:
             print j['Data']['SdcardRemains']
         return
 
     def getjpg(self):
-        r = self.get('/cgi-bin/get_jpg.cgi')
-        return r
+        response = self.get('/cgi-bin/get_jpg.cgi')
+        img = Image.open(StringIO(response.content))
+        return img
 
-    def savejpg(self, response, filename='x.jpg'):
+    def savejpg(self, img, filename='x.jpg'):
         try:
-            img = Image.open(StringIO(response.content))
             img.save(filename)
         except IOError as ex:
             print ex
 
     def test(self, tries=60):
         self.login()
+        self.zoom(100)
         for i in range(tries):
             print i, self.getptz()
             sys.stdout.flush()
-            self.pantilt((i % 100) - 50, 0)
-            r = self.getjpg()
-            if r.ok:
-                self.savejpg(r)
-            else:
-                print r
+            self.pantilt((i % 100) - 50, 10)
+            img = self.getjpg()
+            self.savejpg(img)
             time.sleep(1)
 
 if __name__ == '__main__':
