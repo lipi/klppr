@@ -7,10 +7,15 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.image import Image
 from kivy.uix.label import Label
+from kivy.clock import Clock
 
 import jvc
 
 class TestApp(App):
+
+    #
+    # Camera control
+    #
 
     def up(self, instance):
         print 'up...',
@@ -36,32 +41,34 @@ class TestApp(App):
         self.pantilt()
         print 'done.'
 
-    def reload(self, instance):
-        img = self.jvc.getjpg()
-        self.jvc.savejpg(img, 'x.jpg')
-        self.image.reload()
-
     def pantilt(self):
         self.jvc.pantilt(self.pan, self.tilt)
+
+    def clock_callback(self, dt):
+        img = self.jvc.getjpg()
+        self.jvc.savejpg(img, self.filename)
+        self.image.reload()
+
+    #
+    # Kivy
+    #
 
     def on_start(self):
         self.jvc = jvc.JVC('192.168.3.114')
         self.jvc.login()
-    
-    def build(self):
 
         self.pan = 0
         self.tilt = 0
         self.pan_speed = 1
         self.tilt_speed = 1
+    
+    def build(self):
 
         control_layout = GridLayout(cols=3, rows=3)
         left_button = Button(size_hint=(None, None),
                              text='left', on_press=self.left)
         right_button = Button(size_hint=(None, None),
                               text='right', on_press=self.right)
-        reload_button = Button(size_hint=(None, None),
-                               text='reload', on_press=self.reload)
         up_button = Button(size_hint=(None, None),
                                text='up', on_press=self.up)
         down_button = Button(size_hint=(None, None),
@@ -73,7 +80,7 @@ class TestApp(App):
         control_layout.add_widget(Label()) # dummy
         # second row
         control_layout.add_widget(left_button)
-        control_layout.add_widget(reload_button)
+        control_layout.add_widget(Label()) # dummy
         control_layout.add_widget(right_button)
         # third row
         control_layout.add_widget(Label()) # dummy
@@ -81,13 +88,16 @@ class TestApp(App):
         control_layout.add_widget(Label()) # dummy
 
         status_layout = BoxLayout(orientation='vertical')
-        image = Image(source='x.jpg')
+        self.filename = 'current.jpg'
+        image = Image(source=self.filename)
         self.image = image
         status_layout.add_widget(image)
 
         top_layout = BoxLayout(orientation='vertical')
         top_layout.add_widget(control_layout)
         top_layout.add_widget(status_layout)
+
+        Clock.schedule_interval(self.clock_callback, 0.5)
 
         return top_layout
 
