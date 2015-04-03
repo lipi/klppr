@@ -13,21 +13,21 @@
         Label:
         Button:
             text: 'up'
-            on_press: root.up()
+            on_press: root.tilt += root.tilt_speed
         Label:
-        Label: # spacer
+        Label:
         Button:
             text: 'zoom in'
-            on_press: root.zoom_in()
+            on_press: root.zoom += root.zoom_speed
 
         # second row
         Button:
             text: 'left'
-            on_press: root.left()
+            on_press: root.pan -= root.pan_speed
         Label:
         Button:
             text: 'right'
-            on_press: root.right()
+            on_press: root.pan += root.pan_speed
         Label:
         Label:
 
@@ -35,14 +35,15 @@
         Label:
         Button:
             text: 'down'
-            on_press: root.down()
+            on_press: root.tilt -= root.tilt_speed
         Label:
-        Label: # spacer
+        Label:
         Button:
             text: 'zoom out'
-            on_press: root.zoom_out()
+            on_press: root.zoom -= root.zoom_speed
 
     BoxLayout:
         Image:
             id: image
             source: root.filename
+            allow_stretch: True

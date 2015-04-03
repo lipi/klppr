@@ -96,6 +96,8 @@ class JVC:
     def logout(self):
         self.stop_kicking()
         self.get('/php/session_finish.php')
+        if self.debug:
+            print 'logout'
 
     def pantilt(self, pan=0, tilt=0):
         cmd = {"Cmd":0,"Pan":pan,"Tilt":tilt}

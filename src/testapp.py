@@ -18,7 +18,7 @@ class CalibScreen(BoxLayout):
     filename = StringProperty('current.jpg')
     image = ObjectProperty()
 
-    # TODO: get initial values from camera
+    # will get initial values from camera, see initialize()
     pan = NumericProperty(0)
     tilt = NumericProperty(0)
     zoom = NumericProperty(10)
@@ -31,57 +31,33 @@ class CalibScreen(BoxLayout):
         super(CalibScreen, self).__init__(**kwargs)
         Clock.schedule_interval(self.clock_callback, 0.5)
 
+    def initialize(self):
+        self.pant,self.tilt,self.zoom = self.camera.getptz()        
+
     #
     # Camera control
     #
 
-    def up(self):
-        print 'up...',
-        self.tilt += self.tilt_speed
-        self.pantilt()
-        print 'done'
+    def on_pan(self, instance, pos):
+        print 'pan:', self.pan
+        self.camera.pantilt(self.pan, self.tilt)       
 
-    def down(self):
-        print 'down...'
-        self.tilt -= self.tilt_speed
-        self.pantilt()
-        print 'done'
-
-    def left(self):
-        print 'left...',
-        self.pan -= self.pan_speed
-        self.pantilt()
-        print 'done'
-
-    def right(self):
-        print 'right...'
-        self.pan += self.pan_speed
-        self.pantilt()
-        print 'done.'
-
-    def zoom_in(self):
-        print 'zoom in...'
-        self.zoom += self.zoom_speed
-        self.camera.zoom(self.zoom, self.zoom_speed)
-        print 'done'
-
-    def zoom_out(self):
-        print 'zoom out...'
-        self.zoom -= self.zoom_speed
-        self.camera.zoom(self.zoom, self.zoom_speed)
-        print 'done'
-
-    def pantilt(self):
+    def on_tilt(self, instance, pos):
+        print 'tilt:', self.tilt
         self.camera.pantilt(self.pan, self.tilt)
-        return
 
+    def on_zoom(self, instance, pos):
+        print 'zoom:', self.zoom
+        self.camera.zoom(self.zoom, self.zoom_speed)
+        
     def clock_callback(self, dt):
         try:
+            # TODO: update widget directly, instead of via file
             img = self.camera.getjpg()
             self.camera.savejpg(img, self.filename)
             self.image.reload()
         except Exception as ex:
-            print ex          
+            print ex
 
 class TestApp(App):
 
@@ -89,19 +65,18 @@ class TestApp(App):
     # Kivy
     #
 
-    def on_start(self):
-        print 'start...'
-        self.jvc = jvc.JVC('192.168.3.114')
-        self.jvc.login()
-        self.calib_screen.camera = self.jvc
-        print 'started.'
-
-    
     def build(self):
         print 'building...'
         self.calib_screen = CalibScreen()
         return self.calib_screen
 
+    def on_start(self):
+        print 'start...'
+        self.jvc = jvc.JVC('192.168.3.114')
+        self.jvc.login()
+        self.calib_screen.camera = self.jvc
+        self.calib_screen.initialize()
+        print 'started.'
 
     def on_stop(self):
         self.jvc.logout()
