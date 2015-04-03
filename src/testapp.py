@@ -8,7 +8,8 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.clock import Clock
-from kivy.properties import ObjectProperty, StringProperty, NumericProperty
+from kivy.properties import ObjectProperty, StringProperty
+from kivy.properties import NumericProperty, BoundedNumericProperty
 
 import jvc
 
@@ -19,9 +20,12 @@ class CalibScreen(BoxLayout):
     image = ObjectProperty()
 
     # will get initial values from camera, see initialize()
-    pan = NumericProperty(0)
-    tilt = NumericProperty(0)
-    zoom = NumericProperty(10)
+    pan = BoundedNumericProperty(0, min=-150, max=150,
+                                 errorhandler=lambda x: 150 if x > 150 else -150)
+    tilt = BoundedNumericProperty(0, min=-40, max=40,
+                                  errorhandler=lambda x: 40 if x > 40 else -40)
+    zoom = BoundedNumericProperty(10, min=10, max=100, 
+                                  errorhandler=lambda x: 100 if x > 100 else 10)
 
     pan_speed = NumericProperty(1)
     tilt_speed = NumericProperty(1)
