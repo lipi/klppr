@@ -1,0 +1,50 @@
+#:kivy 1.0
+#
+
+<CalibScreen>:
+    orientation: 'vertical'
+    image: image
+
+    GridLayout:
+        cols: 3
+        rows: 3
+
+        # first row
+        Label:
+            text: ''
+
+        Button:
+            text: 'up'
+            on_press: root.up()
+
+        Label:
+            text: ''
+
+        # second row
+        Button:
+            text: 'left'
+            on_press: root.left()
+
+
+        Label:
+            text: ''
+
+        Button:
+            text: 'right'
+            on_press: root.right()
+
+        # third row
+        Label:
+            text: ''
+
+        Button:
+            text: 'down'
+            on_press: root.down()
+
+        Label:
+            text: ''
+
+    BoxLayout:
+        Image:
+            id: image
+            source: root.filename
