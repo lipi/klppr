@@ -18,10 +18,18 @@ class CalibScreen(BoxLayout):
     filename = StringProperty('current.jpg')
     image = ObjectProperty()
 
+    # TODO: get initial values from camera
     pan = NumericProperty(0)
     tilt = NumericProperty(0)
+    zoom = NumericProperty(10)
+
     pan_speed = NumericProperty(1)
     tilt_speed = NumericProperty(1)
+    zoom_speed = NumericProperty(1)
+
+    def __init__(self, **kwargs):
+        super(CalibScreen, self).__init__(**kwargs)
+        Clock.schedule_interval(self.clock_callback, 0.5)
 
     #
     # Camera control
@@ -51,17 +59,29 @@ class CalibScreen(BoxLayout):
         self.pantilt()
         print 'done.'
 
+    def zoom_in(self):
+        print 'zoom in...'
+        self.zoom += self.zoom_speed
+        self.camera.zoom(self.zoom, self.zoom_speed)
+        print 'done'
+
+    def zoom_out(self):
+        print 'zoom out...'
+        self.zoom -= self.zoom_speed
+        self.camera.zoom(self.zoom, self.zoom_speed)
+        print 'done'
+
     def pantilt(self):
         self.camera.pantilt(self.pan, self.tilt)
         return
 
     def clock_callback(self, dt):
-        print 'refresh..'
-        img = self.camera.getjpg()
-        self.camera.savejpg(img, self.filename)
-        self.image.reload()
-
-
+        try:
+            img = self.camera.getjpg()
+            self.camera.savejpg(img, self.filename)
+            self.image.reload()
+        except Exception as ex:
+            print ex          
 
 class TestApp(App):
 
@@ -80,7 +100,6 @@ class TestApp(App):
     def build(self):
         print 'building...'
         self.calib_screen = CalibScreen()
-        Clock.schedule_interval(self.calib_screen.clock_callback, 0.5)
         return self.calib_screen
 
 

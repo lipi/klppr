@@ -6,43 +6,41 @@
     image: image
 
     GridLayout:
-        cols: 3
+        cols: 5
         rows: 3
 
         # first row
         Label:
-            text: ''
-
         Button:
             text: 'up'
             on_press: root.up()
-
         Label:
-            text: ''
+        Label: # spacer
+        Button:
+            text: 'zoom in'
+            on_press: root.zoom_in()
 
         # second row
         Button:
             text: 'left'
             on_press: root.left()
-
-
         Label:
-            text: ''
-
         Button:
             text: 'right'
             on_press: root.right()
+        Label:
+        Label:
 
         # third row
         Label:
-            text: ''
-
         Button:
             text: 'down'
             on_press: root.down()
-
         Label:
-            text: ''
+        Label: # spacer
+        Button:
+            text: 'zoom out'
+            on_press: root.zoom_out()
 
     BoxLayout:
         Image:
