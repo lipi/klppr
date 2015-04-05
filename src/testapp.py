@@ -1,6 +1,8 @@
 import kivy
 kivy.require('1.8.0') # replace with your current kivy version !
 
+import ConfigParser
+
 from kivy.app import App
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
@@ -20,6 +22,8 @@ class CalibScreen(BoxLayout):
     image = ObjectProperty()
 
     # will get initial values from camera, see initialize()
+    # TODO: use camera-specific values instead of hardcoded ones
+    # (query camera?)
     pan = BoundedNumericProperty(0, min=-150, max=150,
                                  errorhandler=lambda x: 150 if x > 150 else -150)
     tilt = BoundedNumericProperty(0, min=-40, max=40,
@@ -65,22 +69,20 @@ class CalibScreen(BoxLayout):
 
 class TestApp(App):
 
-    #
-    # Kivy
-    #
-
     def build(self):
-        print 'building...'
         self.calib_screen = CalibScreen()
         return self.calib_screen
 
     def on_start(self):
-        print 'start...'
-        self.jvc = jvc.JVC('192.168.3.114')
+        config = ConfigParser.RawConfigParser()
+        config.read('camera.cfg')
+        self.jvc = jvc.JVC(host = config.get('access', 'hostname'),
+                           user = config.get('access', 'user'),
+                           password = config.get('access', 'password'))
         self.jvc.login()
+
         self.calib_screen.camera = self.jvc
         self.calib_screen.initialize()
-        print 'started.'
 
     def on_stop(self):
         self.jvc.logout()
