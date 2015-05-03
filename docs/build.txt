@@ -1,0 +1,10 @@
+
+Building for PC is not required, just run src/
+
+Build a P4A distribution called klppr:
+
+      cd ~/git/python-for-android
+      ./distribute.sh -m "pil requests kivy" -d klppr
+
+However if the requirements line in buildozer.spec contains the
+external modules they will be automatically downloaded. 

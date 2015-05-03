@@ -1,1 +1,8 @@
-adb -s 192.168.3.102:5555 logcat -s python 
+
+debug over WiFi:
+
+      adb -s 192.168.3.102:5555 logcat -s python 
+
+debug over USB:
+
+      adb logcat -s python 
