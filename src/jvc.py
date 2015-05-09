@@ -6,7 +6,6 @@
 import sys
 import json
 import time
-from threading import Timer
 
 import requests
 from requests.auth import HTTPDigestAuth
@@ -65,7 +64,6 @@ class JVC:
         if r.ok:
             if self.debug:
                 print 'login OK'
-            self.start_kicking()
             self.get('/php/monitor.php')
             self.get('/cgi-bin/hello.cgi') # must have for get_jpg
             self.get('/cgi-bin/resource_release.cgi?param=mjpeg') # needed?
@@ -73,28 +71,18 @@ class JVC:
             print 'login failed'
         return r.ok
 
-    def start_kicking(self):
-        self.cont = True
-        self.kick()        
-
-    def stop_kicking(self):
-        self.cont = False
-
     def kick(self):
         '''Keep opening new sessions same as the web app as does'''
-        if self.cont:
-            r1 = self.get('/php/session_continue.php')
-            r2 = self.get('/php/get_error_code.php')
-            r3 = self.get('/cgi-bin/camera_status.cgi')
-            if r1.ok and r2.ok and r3.ok:
-                if self.debug:
-                    print 'kick OK'
-            else:
-                print 'kick failed', r1, r2, r3
-            Timer(10, self.kick).start()
+        r1 = self.get('/php/session_continue.php')
+        r2 = self.get('/php/get_error_code.php')
+        r3 = self.get('/cgi-bin/camera_status.cgi')
+        if r1.ok and r2.ok and r3.ok:
+            if self.debug:
+                print 'kick OK'
+        else:
+            print 'kick failed', r1, r2, r3
 
     def logout(self):
-        self.stop_kicking()
         self.get('/php/session_finish.php')
         if self.debug:
             print 'logout'

@@ -12,8 +12,10 @@ from kivy.uix.label import Label
 from kivy.clock import Clock
 from kivy.properties import ObjectProperty, StringProperty
 from kivy.properties import NumericProperty, BoundedNumericProperty
+from kivy.logger import Logger
 
 import jvc
+from camera import AsyncCamera
 
 class CalibScreen(BoxLayout):
 
@@ -40,29 +42,33 @@ class CalibScreen(BoxLayout):
         Clock.schedule_interval(self.clock_callback, 0.5)
 
     def initialize(self):
-        self.pant,self.tilt,self.zoom = self.camera.getptz()        
+        Logger.info('Initialize...')
+        # TODO: update pan/tilt/zoom as soon as camera responds
+        #self.pan,self.tilt,self.zoom = self.camera.getptz()
+        Logger.info('Done.')
 
     #
     # Camera control
     #
 
     def on_pan(self, instance, pos):
-        print 'pan:', self.pan
+        Logger.info('pan: %d' % self.pan)
         self.camera.pantilt(self.pan, self.tilt)       
+        Logger.info('done')
 
     def on_tilt(self, instance, pos):
-        print 'tilt:', self.tilt
+        Logger.info('tilt: %d' % self.tilt)
         self.camera.pantilt(self.pan, self.tilt)
+        Logger.info('done')
 
     def on_zoom(self, instance, pos):
-        print 'zoom:', self.zoom
+        Logger.info('zoom: %d' % self.zoom)
         self.camera.zoom(self.zoom, self.zoom_speed)
+        Logger.info('done')
         
     def clock_callback(self, dt):
         try:
             # TODO: update widget directly, instead of via file
-            img = self.camera.getjpg()
-            self.camera.savejpg(img, self.filename)
             self.image.reload()
         except Exception as ex:
             print ex
@@ -76,16 +82,19 @@ class TestApp(App):
     def on_start(self):
         config = ConfigParser.RawConfigParser()
         config.read('camera.cfg')
-        self.jvc = jvc.JVC(host = config.get('access', 'hostname'),
-                           user = config.get('access', 'user'),
-                           password = config.get('access', 'password'))
-        self.jvc.login()
 
-        self.calib_screen.camera = self.jvc
+        driver = jvc.JVC(host = config.get('access', 'hostname'),
+                         user = config.get('access', 'user'),
+                         password = config.get('access', 'password'))
+        self.camera = AsyncCamera(driver) 
+
+        self.calib_screen.camera = self.camera
         self.calib_screen.initialize()
 
     def on_stop(self):
-        self.jvc.logout()
+        Logger.info('Logging out...')
+        self.camera.close()
+        Logger.info('Logout done.')
         return
 
 if __name__ == '__main__':
