@@ -1,7 +1,9 @@
-import kivy
-kivy.require('1.8.0') # replace with your current kivy version !
+#!/usr/bin/python
 
 import ConfigParser
+
+import kivy
+kivy.require('1.8.0') # replace with your current kivy version !
 
 from kivy.app import App
 from kivy.uix.button import Button
@@ -10,6 +12,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.clock import Clock
+from kivy.graphics.texture import Texture
 from kivy.properties import ObjectProperty, StringProperty
 from kivy.properties import NumericProperty, BoundedNumericProperty
 from kivy.logger import Logger
@@ -68,8 +71,11 @@ class CalibScreen(BoxLayout):
         
     def clock_callback(self, dt):
         try:
-            # TODO: update widget directly, instead of via file
-            self.image.reload()
+            img = self.camera.getimg()
+            buf = img.tobytes()
+            tex = Texture.create(size=img.size)
+            tex.blit_buffer(buf, colorfmt='rgb', bufferfmt='ubyte')
+            self.image.texture = tex
         except Exception as ex:
             print ex
 

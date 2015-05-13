@@ -131,6 +131,10 @@ class JVC:
         img = Image.open(StringIO(response.content))
         return img
 
+    def getimg(self):
+        img = self.getjpg()
+        return img.transpose(Image.FLIP_TOP_BOTTOM)
+
     def savejpg(self, img, filename='x.jpg'):
         try:
             img.save(filename)

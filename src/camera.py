@@ -36,22 +36,24 @@ def kick_thread(driver,dummy):
         sleep(10)
         driver.kick()
 
-def preview_thread(driver,dummy):
+def preview_thread(driver,set_image):
     '''Keeps fetching preview images'''
     while True:
         try:
-            img = driver.getjpg()
-            driver.savejpg(img, 'current.jpg')
-            sleep(0.5)
+            img = driver.getimg()
+            print 'preview:', img
+            set_image(img)
         except IOError:
             # e.g. no connection yet
             # TODO: use default image?
             pass 
+        sleep(0.5)
 
 class AsyncCamera:
 
     def __init__(self, driver=None):
         self.driver = driver
+        self.image = None
 
         self.c_queue = Queue.Queue() 
         self.c_thread = threading.Thread(target=control_thread,
@@ -68,7 +70,7 @@ class AsyncCamera:
         self.k_thread.start()
 
         self.p_thread = threading.Thread(target=preview_thread,
-                                         args=(self.driver,None))
+                                         args=(self.driver,self.set_image))
         self.p_thread.daemon = True
         self.p_thread.start()
 
@@ -84,6 +86,14 @@ class AsyncCamera:
         '''Set zoom level using given speed'''
         self.c_queue.put((self.driver.zoom, (zoom, speed)))
 
+    def getimg(self):
+        # updated by preview thread
+        # TODO: protect against concurrent access
+        print 'self.image:', self.image
+        return self.image
+
+    def set_image(self, img):
+        self.image = img
 
         
 
