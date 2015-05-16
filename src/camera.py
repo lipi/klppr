@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-import Queue
-import threading
+from Queue import Queue, Empty
+from threading import Thread
 from time import sleep
 
 '''Asynchronous camera controller
@@ -36,41 +36,39 @@ def kick_thread(driver,dummy):
         sleep(10)
         driver.kick()
 
-def preview_thread(driver,set_image):
+def preview_thread(driver,image_queue):
     '''Keeps fetching preview images'''
     while True:
         try:
             img = driver.getimg()
             print 'preview:', img
-            set_image(img)
+            image_queue.put(img)
         except IOError:
             # e.g. no connection yet
             # TODO: use default image?
             pass 
-        sleep(0.5)
 
 class AsyncCamera:
 
     def __init__(self, driver=None):
         self.driver = driver
-        self.image = None
+        self.i_queue = Queue()
+        self.img = None
 
-        self.c_queue = Queue.Queue() 
-        self.c_thread = threading.Thread(target=control_thread,
-                                         args=(self.c_queue,None))
+        self.c_queue = Queue() 
+        self.c_thread = Thread(target=control_thread, args=(self.c_queue,None))
         self.c_thread.daemon = True
         self.c_thread.start()
 
         self.c_queue.put((self.driver.login, None))
         #self.c_queue.join() -- would block creator
 
-        self.k_thread = threading.Thread(target=kick_thread,
-                                         args=(self.driver,None))
+        self.k_thread = Thread(target=kick_thread, args=(self.driver,None))
         self.k_thread.daemon = True
         self.k_thread.start()
 
-        self.p_thread = threading.Thread(target=preview_thread,
-                                         args=(self.driver,self.set_image))
+        self.p_thread = Thread(target=preview_thread,
+                               args=(self.driver,self.i_queue))
         self.p_thread.daemon = True
         self.p_thread.start()
 
@@ -80,20 +78,14 @@ class AsyncCamera:
 
     def pantilt(self, pan=0, tilt=0):
         '''Pan and tilt camera to the given angles (degrees)'''
-        self.c_queue.put((self.driver.pantilt, (pan, tilt)))
+        Thread(target=self.driver.pantilt, args=(pan,tilt)).start()
+        
 
     def zoom(self, zoom=10, speed=1):
         '''Set zoom level using given speed'''
-        self.c_queue.put((self.driver.zoom, (zoom, speed)))
+        Thread(target=self.driver.zoom, args=(zoom,speed)).start()
 
     def getimg(self):
-        # updated by preview thread
-        # TODO: protect against concurrent access
-        print 'self.image:', self.image
-        return self.image
-
-    def set_image(self, img):
-        self.image = img
-
-        
-
+        while not self.i_queue.empty():
+            self.img = self.i_queue.get()
+        return self.img

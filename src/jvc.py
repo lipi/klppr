@@ -32,19 +32,14 @@ class JVC:
         self.session = requests.session()
         self.session.auth = HTTPDigestAuth(user, password)
         self.url = 'http://%s' % self.host
-        self.session.mount(self.url, HTTPAdapter(max_retries=5))
+        self.session.mount(self.url, HTTPAdapter(max_retries=0))
         self.cookies = self.session.cookies
         self.debug = True
-        # maybe auto-login?
 
-    def get(self, uri='/'):
+    def get(self, uri='/', **kwargs):
         url = self.url + uri
         url = add_timestamp(url)
-        # new session for every GET
-        session = requests.session()
-        session.auth = self.session.auth
-        session.cookies = self.cookies
-        response = session.get(url)
+        response = self.session.get(url)
         return response
 
     def post(self, uri, data):
@@ -52,11 +47,7 @@ class JVC:
         url = add_timestamp(url)
         if self.debug:
             print 'POST', url, data
-        # new session for every POST
-        session = requests.session()
-        session.auth = self.session.auth
-        session.cookies = self.cookies
-        response = session.post(url, data=data)
+        response = self.session.post(url, data=data)
         return response
 
     def login(self):
@@ -73,9 +64,10 @@ class JVC:
 
     def kick(self):
         '''Keep opening new sessions same as the web app as does'''
-        r1 = self.get('/php/session_continue.php')
-        r2 = self.get('/php/get_error_code.php')
-        r3 = self.get('/cgi-bin/camera_status.cgi')
+        timeout = 10
+        r1 = self.get('/php/session_continue.php', timeout=timeout)
+        r2 = self.get('/php/get_error_code.php', timeout=timeout)
+        r3 = self.get('/cgi-bin/camera_status.cgi', timeout=timeout)
         if r1.ok and r2.ok and r3.ok:
             if self.debug:
                 print 'kick OK'
@@ -95,7 +87,6 @@ class JVC:
                       data = json.dumps(payload))
         if self.debug:
             print r.reason
-        return self.getptz()
 
     def zoom(self, zoom=10, speed=1):
         cmd = {"DeciZoomPosition":zoom, "Speed":speed}
@@ -104,7 +95,6 @@ class JVC:
                       data = json.dumps(payload))
         if self.debug:
             print r.reason
-        return self.getptz()
 
     def getptz(self):
         r = self.get('/cgi-bin/ptz_position.cgi')
@@ -127,7 +117,7 @@ class JVC:
         return
 
     def getjpg(self):
-        response = self.get('/cgi-bin/get_jpg.cgi')
+        response = self.get('/cgi-bin/get_jpg.cgi', timeout=1)
         img = Image.open(StringIO(response.content))
         return img
 

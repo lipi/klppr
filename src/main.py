@@ -23,7 +23,6 @@ from camera import AsyncCamera
 class CalibScreen(BoxLayout):
 
     camera = ObjectProperty()
-    filename = StringProperty('current.jpg')
     image = ObjectProperty()
 
     # will get initial values from camera, see initialize()
@@ -42,7 +41,7 @@ class CalibScreen(BoxLayout):
 
     def __init__(self, **kwargs):
         super(CalibScreen, self).__init__(**kwargs)
-        Clock.schedule_interval(self.clock_callback, 0.5)
+        Clock.schedule_interval(self.clock_callback, 0.1)
 
     def initialize(self):
         Logger.info('Initialize...')
