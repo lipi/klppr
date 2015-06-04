@@ -39,7 +39,7 @@ class JVC:
     def get(self, uri='/', **kwargs):
         url = self.url + uri
         url = add_timestamp(url)
-        response = self.session.get(url)
+        response = self.session.get(url, **kwargs)
         return response
 
     def post(self, uri, data):
