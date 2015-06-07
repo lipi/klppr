@@ -39,14 +39,10 @@ def kick_thread(driver,dummy):
 def preview_thread(driver,image_queue):
     '''Keeps fetching preview images'''
     while True:
-        try:
-            img = driver.getimg()
+        img = driver.getimg()
+        if bool(img):
             print 'preview:', img
             image_queue.put(img)
-        except IOError:
-            # e.g. no connection yet
-            # TODO: use default image?
-            pass 
 
 class AsyncCamera:
 

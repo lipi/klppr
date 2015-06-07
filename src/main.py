@@ -69,8 +69,8 @@ class CalibScreen(BoxLayout):
         Logger.info('done')
         
     def clock_callback(self, dt):
-        try:
-            img = self.camera.getimg()
+        img = self.camera.getimg()
+        if img is not None:
             buf = img.tostring()
             # img is RGB, convert it to RGBA (Nexus 4 can't blit RGB),
             # see https://github.com/kivy/kivy/issues/1600
@@ -79,9 +79,6 @@ class CalibScreen(BoxLayout):
             tex = Texture.create(size=img.size, colorfmt='rgba')
             tex.blit_buffer(buf, colorfmt='rgba', bufferfmt='ubyte')
             self.image.texture = tex
-        except Exception as ex:
-            print ex
-            pass
 
 class TestApp(App):
 
