@@ -33,6 +33,8 @@ class CameraService(object):
 
     def _logout(self, *args):
         self.camera.close()
+        osc.dontListen()
+        exit()
 
     def run(self):
         while True:

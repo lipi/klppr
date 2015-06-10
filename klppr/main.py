@@ -131,6 +131,7 @@ class KlpprApp(App):
     
     def on_stop(self):
         osc.sendMsg('/logout', port=3000)
+        osc.dontListen()
         return
 
 if __name__ == '__main__':
