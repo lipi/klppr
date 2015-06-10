@@ -5,6 +5,11 @@
     orientation: 'vertical'
     image: image
 
+    BoxLayout:
+        Image:
+            id: image
+            allow_stretch: True
+
     GridLayout:
         cols: 5
         rows: 3
@@ -42,7 +47,3 @@
             text: 'zoom out'
             on_press: root.zoom -= root.zoom_speed
 
-    BoxLayout:
-        Image:
-            id: image
-            allow_stretch: True
