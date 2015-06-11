@@ -27,9 +27,7 @@ class CalibScreen(BoxLayout):
 
     image = ObjectProperty()
 
-    # TODO: get initial values from camera, see initialize()
     # TODO: use camera-specific values instead of hardcoded ones
-    # (query camera?)
     pan = BoundedNumericProperty(0, min=-150, max=150,
                                  errorhandler=lambda x: 150 if x > 150 else -150)
     tilt = BoundedNumericProperty(0, min=-40, max=40,
@@ -44,13 +42,6 @@ class CalibScreen(BoxLayout):
     def __init__(self, **kwargs):
         super(CalibScreen, self).__init__(**kwargs)
         self.imgbuf = ''
-
-    def initialize(self):
-        # TODO: update pan/tilt/zoom as soon as
-        # camera responds
-        # self.pan,self.tilt,self.zoom =
-        # self.camera.getptz()
-        pass
 
     #
     # Camera control
@@ -73,9 +64,13 @@ class CalibScreen(BoxLayout):
         
 
     #
-    # OSC callback
+    # OSC callbacks
     #
-    def process_image(self, message, *args):
+    def receive_image(self, message, *args):
+        '''
+        Receive preview image chunks and update image once all chunks have
+        been received.
+        '''
         try:
             data = message[2]
             self.imgbuf += data
@@ -94,9 +89,19 @@ class CalibScreen(BoxLayout):
             self.image.texture = tex
             
 
-    def process_imagesize(self, message, *args):
+    def receive_imagesize(self, message, *args):
+        '''
+        CameraService sends /imagesize before each frame.
+        Use it to reset image buffer content.
+        '''
         self.imgsize = pickle.loads(message[2])
         self.imgbuf = ''
+
+    def receive_ptz(self, message, *args):
+        '''
+        Update our pan/tilt/zoom values based on camera's
+        '''
+        self.pan,self.tilt,self.zoom = pickle.loads(message[2])
 
 class KlpprApp(App):
 
@@ -107,8 +112,9 @@ class KlpprApp(App):
         self.start_service()
         osc.init()
         oscid = osc.listen(port=3002)
-        osc.bind(oscid, self.calib_screen.process_image, '/image')
-        osc.bind(oscid, self.calib_screen.process_imagesize, '/imagesize')
+        osc.bind(oscid, self.calib_screen.receive_image, '/image')
+        osc.bind(oscid, self.calib_screen.receive_imagesize, '/imagesize')
+        osc.bind(oscid, self.calib_screen.receive_ptz, '/ptz')
         Clock.schedule_interval(lambda *x: osc.readQueue(oscid), 0)
         return self.calib_screen
 

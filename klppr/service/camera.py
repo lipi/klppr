@@ -20,7 +20,7 @@ On creation it connects to the camera, logs in and:
 '''
 
 def _control_fn(queue, init_cmd=None):
-    '''Receives commands through queue and executes them'''
+    '''Receives commands through queue and executes them in sequence'''
     while True:
         # TODO: use variable number of arguments
         fn,args = queue.get()
@@ -46,7 +46,7 @@ def _preview_fn(_driver,image_queue):
 
 class AsyncCamera:
 
-    def __init__(self, driver=None):
+    def __init__(self, driver):
         self._driver = driver
         self._img_queue = Queue()
 
@@ -56,8 +56,9 @@ class AsyncCamera:
         self._cmd_thread.start()
 
         self._cmd_queue.put((self._driver.login, None))
-        #self._cmd_queue.join() -- would block creator
-
+        self._cmd_queue.join() # will block creator
+        self._pan,self._tilt,self._zoom = self._driver.getptz()
+ 
         self._kick_thread = Thread(target=_kick_fn, args=(self._driver,None))
         self._kick_thread.daemon = True
         self._kick_thread.start()
@@ -73,15 +74,28 @@ class AsyncCamera:
 
     def pantilt(self, pan=0, tilt=0):
         '''Pan and tilt camera to the given angles (degrees)'''
+        self._pan,self._tilt = pan,tilt
+        # Create a thread for the potentially long-running command.
+        # This means commands can run parallel (out-of-order).
+        # If this is not desirable (not sure?) use the command queue.
         Thread(target=self._driver.pantilt, args=(pan,tilt)).start()
         
-
     def zoom(self, zoom=10, speed=1):
         '''Set zoom level using given speed'''
+        self._zoom = zoom
+        # Create a thread for the potentially long-running command.
+        # This means commands can run parallel (out-of-order).
+        # If this is not desirable (not sure?) use the command queue.
         Thread(target=self._driver.zoom, args=(zoom,speed)).start()
 
     def getimg(self):
+        '''
+        Return the most recent image received by the preview thread.
+        '''
         img = None
         while not self._img_queue.empty():
             img = self._img_queue.get()
         return img
+
+    def ptz(self):
+        return self._pan,self._tilt,self._zoom

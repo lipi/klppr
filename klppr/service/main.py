@@ -23,6 +23,9 @@ class CameraService(object):
         osc.bind(self._oscid, self._zoom, '/zoom')
         osc.bind(self._oscid, self._logout, '/logout')
 
+        # notify UI of current PTZ state
+        osc.sendMsg('/ptz', [pickle.dumps(camera.ptz()),], port=3002)
+
     def _pantilt(self, message, *args):
         pan,tilt = pickle.loads(message[2]) 
         self.camera.pantilt(pan,tilt)
@@ -39,7 +42,10 @@ class CameraService(object):
     def run(self):
         while True:
             # process incoming commands
-            osc.readQueue(self._oscid)
+            try:
+                osc.readQueue(self._oscid)
+            except KeyError:
+                return
 
             # send preview update
             img = camera.getimg()
@@ -64,7 +70,7 @@ if __name__ == '__main__':
                      password = config.get('access', 'password'))
     camera = AsyncCamera(driver) 
 
-    # start listening 
+    # start listening for commands from UI or tracker
     service = CameraService(camera)
     service.run()
 
