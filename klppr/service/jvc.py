@@ -66,22 +66,26 @@ class JVC:
         return response
 
     def login(self):
-        r = self._get('/php/session_start.php')
+        timeout = (3,1) 
+        r = self._get('/php/session_start.php', timeout=timeout)
         success = False
         if r.ok:
             success = True
             if self.debug:
                 print 'login OK'
-            self._get('/php/monitor.php')
-            self._get('/cgi-bin/hello.cgi') # must have for get_jpg
-            self._get('/cgi-bin/resource_release.cgi?param=mjpeg') # needed?
+            self._get('/php/monitor.php', timeout=timeout)
+            # must have for get_jpg
+            self._get('/cgi-bin/hello.cgi', timeout=timeout)
+            # not sure if needed
+            self._get('/cgi-bin/resource_release.cgi?param=mjpeg',
+                      timeout=timeout)
         else:
             print 'login failed'
         return success
 
     def kick(self):
         '''Keep opening new sessions same as the web app does'''
-        timeout = 10
+        timeout = (10,5)
         try:
             r1 = self._get('/php/session_continue.php', timeout=timeout)
             r2 = self._get('/php/get_error_code.php', timeout=timeout)
@@ -105,8 +109,8 @@ class JVC:
         payload = {"Command":"SetPTCtrl",
                               "Params": cmd}
         r = self._post('/cgi-bin/cmd.cgi',
-                      data = json.dumps(payload),
-                      timeout = 1)
+                       data = json.dumps(payload),
+                       timeout = (3,1))
         if self.debug:
             print r.reason
 
@@ -114,13 +118,13 @@ class JVC:
         cmd = {"DeciZoomPosition":zoom, "Speed":speed}
         payload = {"Command": "SetZoomPosition", "Params":cmd }
         r = self._post('/cgi-bin/cmd.cgi', 
-                      data = json.dumps(payload),
-                      timeout = 1)
+                       data = json.dumps(payload),
+                       timeout = (3,1))
         if self.debug:
             print r.reason
 
     def getptz(self):
-        r = self._get('/cgi-bin/ptz_position.cgi')
+        r = self._get('/cgi-bin/ptz_position.cgi', timeout = (3,1))
         if r.ok:
             j = r.json()
             data = j['Data']
@@ -140,7 +144,7 @@ class JVC:
         return
 
     def getjpg(self):
-        response = self._get('/cgi-bin/get_jpg.cgi', timeout=1)
+        response = self._get('/cgi-bin/get_jpg.cgi', timeout=(3,1))
         img = None
         if response.content:
             img = Image.open(StringIO(response.content))
