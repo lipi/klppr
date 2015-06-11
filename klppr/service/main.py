@@ -44,8 +44,14 @@ class CameraService(object):
             # send preview update
             img = camera.getimg()
             if img is not None:
-                osc.sendMsg('/image', [img.tostring()[:100], ], port=3002)
-
+                osc.sendMsg('/imagesize', [pickle.dumps(img.size),], port=3002)
+                buf = img.tostring()
+                chunk_size = 60000 # UDP limitation: 64K
+                # TODO: some chunks seem to get lost, use some other form of IPC
+                # (OSC uses UDP)
+                for offset in range(0, len(buf), chunk_size):
+                    data = buf[offset:offset+chunk_size]
+                    osc.sendMsg('/image', [data,], port=3002, typehint='b')
 
 if __name__ == '__main__':
     

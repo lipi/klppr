@@ -13,6 +13,7 @@ from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.image import Image
+from PIL import Image as PilImage
 from kivy.uix.label import Label
 from kivy.graphics.texture import Texture
 from kivy.properties import ObjectProperty, StringProperty
@@ -42,6 +43,7 @@ class CalibScreen(BoxLayout):
 
     def __init__(self, **kwargs):
         super(CalibScreen, self).__init__(**kwargs)
+        self.imgbuf = ''
 
     def initialize(self):
         # TODO: update pan/tilt/zoom as soon as
@@ -71,29 +73,30 @@ class CalibScreen(BoxLayout):
         
 
     #
-    # OSC cllback
+    # OSC callback
     #
     def process_image(self, message, *args):
-        return
-        print 'message:', message
-        return
-
-        buf = None
         try:
-            buf = message[2]
+            data = message[2]
+            self.imgbuf += data
         except Exception as ex:
             #print ex
-            pass
+            return
 
-        if buf is not None:
-            img = Image.open(StringIO(buf))
-            # img is RGB, convert it to RGBA (Nexus 4 can't blit RGB),
+        if self.imgsize[0] * self.imgsize[1] * 3 == len(self.imgbuf):
+            # image buffer is RGB, convert it to RGBA (Nexus 4 can't blit RGB),
             # see https://github.com/kivy/kivy/issues/1600
+            img = PilImage.fromstring('RGB', self.imgsize, self.imgbuf)
             img.putalpha(255)
             buf = img.tostring()
-            tex = Texture.create(size=img.size, colorfmt='rgba')
+            tex = Texture.create(size=self.imgsize, colorfmt='rgba')
             tex.blit_buffer(buf, colorfmt='rgba', bufferfmt='ubyte')
             self.image.texture = tex
+            
+
+    def process_imagesize(self, message, *args):
+        self.imgsize = pickle.loads(message[2])
+        self.imgbuf = ''
 
 class KlpprApp(App):
 
@@ -105,6 +108,7 @@ class KlpprApp(App):
         osc.init()
         oscid = osc.listen(port=3002)
         osc.bind(oscid, self.calib_screen.process_image, '/image')
+        osc.bind(oscid, self.calib_screen.process_imagesize, '/imagesize')
         Clock.schedule_interval(lambda *x: osc.readQueue(oscid), 0)
         return self.calib_screen
 

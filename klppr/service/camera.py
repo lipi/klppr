@@ -41,7 +41,7 @@ def _preview_fn(_driver,image_queue):
     while True:
         _img = _driver.getimg()
         if bool(_img):
-            print 'preview:', _img
+            #print 'preview:', _img
             image_queue.put(_img)
 
 class AsyncCamera:
@@ -51,7 +51,7 @@ class AsyncCamera:
         self._img_queue = Queue()
 
         self._cmd_queue = Queue() 
-        self._cmd_thread = Thread(target=_control_fn, args=(self._cmd_queue,None)) # 
+        self._cmd_thread = Thread(target=_control_fn, args=(self._cmd_queue,None))
         self._cmd_thread.daemon = True
         self._cmd_thread.start()
 
@@ -65,7 +65,7 @@ class AsyncCamera:
         self._preview_thread = Thread(target=_preview_fn,
                                args=(self._driver,self._img_queue))
         self._preview_thread.daemon = True
-#        self._preview_thread.start()
+        self._preview_thread.start()
 
     def close(self):
         self._cmd_queue.put((self._driver.logout, None))
