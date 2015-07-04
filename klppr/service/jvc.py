@@ -44,42 +44,49 @@ class JVC:
         self.debug = True
 
     def _get(self, uri='/', **kwargs):
+        '''
+        GET the relative path (URI) and return the response.
+        May throw exception.
+        '''
         url = self.url + uri
         url = add_timestamp(url)
-        response = Response()
-        try:
-            response = self.session.get(url, **kwargs)
-        except Exception as ex:
-            print ex
+        response = self.session.get(url, **kwargs)
+        if self.debug:
+            print 'elapsed:',response.elapsed,'reason:',response.reason
         return response
 
     def _post(self, uri, data, **kwargs):
+        '''
+        POST data to the relative path (URI) and return the response.
+        May throw exception.
+        '''
         url = self.url + uri
         url = add_timestamp(url)
         if self.debug:
             print 'POST', url, data
-        response = Response()
-        try:
-            response = self.session.post(url, data=data, **kwargs)
-        except Exception as ex:
-            print ex
+        response = self.session.post(url, data=data, **kwargs)
+        if self.debug:
+            print 'elapsed:',response.elapsed,'reason:',response.reason
         return response
 
     def login(self):
         timeout = (3,1) 
-        r = self._get('/php/session_start.php', timeout=timeout)
         success = False
-        if r.ok:
-            success = True
-            if self.debug:
-                print 'login OK'
-            self._get('/php/monitor.php', timeout=timeout)
-            # must have for get_jpg
-            self._get('/cgi-bin/hello.cgi', timeout=timeout)
-            # not sure if needed
-            self._get('/cgi-bin/resource_release.cgi?param=mjpeg',
+        try:
+            r = self._get('/php/session_start.php', timeout=timeout)
+            if r.reason == 'OK':
+                r = self._get('/php/monitor.php', timeout=timeout)
+            if r.reason == 'OK':
+                # must have for get_jpg
+                r = self._get('/cgi-bin/hello.cgi', timeout=timeout)
+            if r.reason == 'OK':
+                # not sure if needed
+                r = self._get('/cgi-bin/resource_release.cgi?param=mjpeg',
                       timeout=timeout)
-        else:
+            if r.reason == 'OK':
+                success = True
+        except Exception as ex:
+            print ex
             print 'login failed'
         return success
 
@@ -91,16 +98,22 @@ class JVC:
             r2 = self._get('/php/get_error_code.php', timeout=timeout)
             r3 = self._get('/cgi-bin/camera_status.cgi', timeout=timeout)
         except Exception as ex:
-            print ex
+            print 'kick:', ex
+            return False
 
-        if r1.ok and r2.ok and r3.ok:
+        if r1.reason == 'OK' and r2.reason == 'OK' and r3.reason == 'OK':
             if self.debug:
                 print 'kick OK'
+            return True
         else:
-            print 'kick failed', r1, r2, r3
+            print 'kick failed'
+            return False
 
     def logout(self):
-        self._get('/php/session_finish.php')
+        try:
+            r = self._get('/php/session_finish.php')
+        except Exception as ex:
+            print 'logout:', ex
         if self.debug:
             print 'logout'
 
@@ -108,20 +121,22 @@ class JVC:
         cmd = {"Cmd":0,"Pan":pan,"Tilt":tilt}
         payload = {"Command":"SetPTCtrl",
                               "Params": cmd}
-        r = self._post('/cgi-bin/cmd.cgi',
-                       data = json.dumps(payload),
-                       timeout = (3,1))
-        if self.debug:
-            print r.reason
+        try:
+            r = self._post('/cgi-bin/cmd.cgi',
+                           data = json.dumps(payload),
+                           timeout = (3,1))
+        except Exception as ex:
+            print 'pantilt:', ex
 
     def zoom(self, zoom=10, speed=1):
         cmd = {"DeciZoomPosition":zoom, "Speed":speed}
         payload = {"Command": "SetZoomPosition", "Params":cmd }
-        r = self._post('/cgi-bin/cmd.cgi', 
-                       data = json.dumps(payload),
-                       timeout = (3,1))
-        if self.debug:
-            print r.reason
+        try:
+            r = self._post('/cgi-bin/cmd.cgi', 
+                           data = json.dumps(payload),
+                           timeout = (3,1))
+        except Exception as ex:
+            print 'zoom:', ex
 
     def getptz(self):
         r = self._get('/cgi-bin/ptz_position.cgi', timeout = (3,1))
@@ -137,17 +152,24 @@ class JVC:
         return result
 
     def getstatus(self):
-        r = self._get('/cgi-bin/camera_status.cgi')
+        try:
+            r = self._get('/cgi-bin/camera_status.cgi')
+        except Exception as ex:
+            print 'getstatus:', ex
         j = r.json()
         if self.debug:
             print j['Data']['SdcardRemains']
         return
 
     def getjpg(self):
-        response = self._get('/cgi-bin/get_jpg.cgi', timeout=(3,1))
         img = None
-        if response.content:
+        try:
+            response = self._get('/cgi-bin/get_jpg.cgi', timeout=(3,1))
+            print 'jpg size:', len(response.content)
             img = Image.open(StringIO(response.content))
+        except Exception as ex:
+            print 'getjpg:', ex
+            
         return img
 
     def getimg(self):

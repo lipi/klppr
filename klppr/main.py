@@ -23,6 +23,9 @@ from kivy.lib import osc
 from kivy.utils import platform
 from kivy.clock import Clock
 
+def numbytes(imgsize):
+    return imgsize[0] * imgsize[1] * 3
+
 class CalibScreen(BoxLayout):
 
     image = ObjectProperty()
@@ -73,12 +76,13 @@ class CalibScreen(BoxLayout):
         '''
         try:
             data = message[2]
-            self.imgbuf += data
+            chunk_id = ord(data[0])
+            self.imgbuf += data[1:]
         except Exception as ex:
             #print ex
             return
 
-        if self.imgsize[0] * self.imgsize[1] * 3 == len(self.imgbuf):
+        if numbytes(self.imgsize) == len(self.imgbuf):
             # image buffer is RGB, convert it to RGBA (Nexus 4 can't blit RGB),
             # see https://github.com/kivy/kivy/issues/1600
             img = PilImage.fromstring('RGB', self.imgsize, self.imgbuf)
@@ -95,6 +99,9 @@ class CalibScreen(BoxLayout):
         Use it to reset image buffer content.
         '''
         self.imgsize = pickle.loads(message[2])
+        if numbytes(self.imgsize) != len(self.imgbuf):
+            Logger.warning('image buffer size: %d' % len(self.imgbuf))
+            pass
         self.imgbuf = ''
 
     def receive_ptz(self, message, *args):
@@ -131,12 +138,16 @@ class KlpprApp(App):
             self.service = None
 
     def on_start(self):
+        osc.sendMsg('/start_preview', port=3000)
         pass
 
     def on_pause(self):
+        # avoid unnecessary traffic (image download)
+        osc.sendMsg('/stop_preview', port=3000)
         return True # avoid on_stop being called
 
     def on_resume(self):
+        osc.sendMsg('/start_preview', port=3000)
         pass
     
     def on_stop(self):

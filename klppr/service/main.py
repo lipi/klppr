@@ -22,6 +22,8 @@ class CameraService(object):
         osc.bind(self._oscid, self._pantilt, '/pantilt')
         osc.bind(self._oscid, self._zoom, '/zoom')
         osc.bind(self._oscid, self._logout, '/logout')
+        osc.bind(self._oscid, self._stop_preview, '/stop_preview')
+        osc.bind(self._oscid, self._start_preview, '/start_preview')
 
         # notify UI of current PTZ state
         osc.sendMsg('/ptz', [pickle.dumps(camera.ptz()),], port=3002)
@@ -39,6 +41,12 @@ class CameraService(object):
         osc.dontListen()
         exit()
 
+    def _stop_preview(self, *args):
+        self.camera.stop_preview()
+
+    def _start_preview(self, *args):
+        self.camera.start_preview()
+
     def run(self):
         while True:
             # process incoming commands
@@ -53,10 +61,12 @@ class CameraService(object):
                 osc.sendMsg('/imagesize', [pickle.dumps(img.size),], port=3002)
                 buf = img.tostring()
                 chunk_size = 60000 # UDP limitation: 64K
-                # TODO: some chunks seem to get lost, use some other form of IPC
-                # (OSC uses UDP)
+                # TODO: increase UDP buffer sizes in OSC to avoid chunk loss
+                chunk_id = 0
                 for offset in range(0, len(buf), chunk_size):
-                    data = buf[offset:offset+chunk_size]
+                    data = chr(chunk_id) + buf[offset:offset+chunk_size]
+                    #data = chr(chunk_id) * chunk_size
+                    chunk_id += 1
                     osc.sendMsg('/image', [data,], port=3002, typehint='b')
 
 if __name__ == '__main__':
