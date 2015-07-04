@@ -24,7 +24,7 @@ class AsyncCamera:
 
     def __init__(self, driver):
         self._driver = driver
-        self._img_queue = Queue()
+        self._jpg_queue = Queue()
 
         self._cmd_queue = Queue() 
         self._cmd_thread = Thread(target=self._control_fn)
@@ -68,16 +68,19 @@ class AsyncCamera:
                 self._driver.login()                
 
     def _preview_fn(self):
-        '''Keeps fetching preview images'''
+        '''Keeps fetching preview images.
+
+        Fetches JPEG images one-by-one, as fast as possible.'''
         while True:
             if not self._is_previewing:
+                # reduce CPU load by avoiding busy looping
                 sleep(.5)
                 continue
 
-            _img = self._driver.getimg()
-            if bool(_img):
-                print 'preview:', _img
-                self._img_queue.put(_img)
+            jpg = self._driver.getjpg()
+            if bool(jpg):
+                print 'preview: %d bytes' % len(jpg)
+                self._jpg_queue.put(jpg)
 
     def close(self):
         self._cmd_queue.put((self._driver.logout, None))
@@ -99,14 +102,14 @@ class AsyncCamera:
         # If this is not desirable (not sure?) use the command queue.
         Thread(target=self._driver.zoom, args=(zoom,speed)).start()
 
-    def getimg(self):
+    def getjpg(self):
         '''
         Return the most recent image received by the preview thread.
         '''
-        img = None
-        while not self._img_queue.empty():
-            img = self._img_queue.get()
-        return img
+        jpg = None
+        while not self._jpg_queue.empty():
+            jpg = self._jpg_queue.get()
+        return jpg
 
     def ptz(self):
         return self._pan,self._tilt,self._zoom

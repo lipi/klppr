@@ -162,19 +162,23 @@ class JVC:
         return
 
     def getjpg(self):
-        img = None
+        '''Return JPEG image data received from camera or None.'''
+        jpg = None
         try:
             response = self._get('/cgi-bin/get_jpg.cgi', timeout=(3,1))
-            print 'jpg size:', len(response.content)
-            img = Image.open(StringIO(response.content))
+            #img = Image.open(StringIO(response.content))
+            jpg = response.content
         except Exception as ex:
             print 'getjpg:', ex
             
-        return img
+        return jpg
 
     def getimg(self):
-        img = self.getjpg()
-        if img is not None:
+        '''Fetch JPEG data from camera and convert it to PIL image.
+        Flip image vertically. Return None if no data.'''
+        jpg = self.getjpg()
+        if jpg is not None:
+            img = Image.open(StringIO(jpg))
             img = img.transpose(Image.FLIP_TOP_BOTTOM)
         return img
 

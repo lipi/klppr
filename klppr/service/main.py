@@ -56,18 +56,14 @@ class CameraService(object):
                 return
 
             # send preview update
-            img = camera.getimg()
-            if img is not None:
-                osc.sendMsg('/imagesize', [pickle.dumps(img.size),], port=3002)
-                buf = img.tostring()
-                chunk_size = 60000 # UDP limitation: 64K
-                # TODO: increase UDP buffer sizes in OSC to avoid chunk loss
-                chunk_id = 0
-                for offset in range(0, len(buf), chunk_size):
-                    data = chr(chunk_id) + buf[offset:offset+chunk_size]
-                    #data = chr(chunk_id) * chunk_size
-                    chunk_id += 1
-                    osc.sendMsg('/image', [data,], port=3002, typehint='b')
+            jpg = camera.getjpg()
+            if jpg is not None:
+                # NOTE: OSC is UDP based, therefore jpg must be 64k or less
+                # (otherwise it must be split to multiple transfers)
+                # Also note that the OS might drop UDP packets if its
+                # receive buffers are small (can be increased in OSCServer by 
+                # using setsockopt).
+                osc.sendMsg('/jpg', [jpg,], port=3002, typehint='b')
 
 if __name__ == '__main__':
     

@@ -8,12 +8,14 @@ import pickle
 import kivy
 kivy.require('1.8.0') # replace with your current kivy version !
 
+from PIL import Image as PilImage
+from StringIO import StringIO
+
 from kivy.app import App
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.image import Image
-from PIL import Image as PilImage
 from kivy.uix.label import Label
 from kivy.graphics.texture import Texture
 from kivy.properties import ObjectProperty, StringProperty
@@ -44,7 +46,6 @@ class CalibScreen(BoxLayout):
 
     def __init__(self, **kwargs):
         super(CalibScreen, self).__init__(**kwargs)
-        self.imgbuf = ''
 
     #
     # Camera control
@@ -69,41 +70,29 @@ class CalibScreen(BoxLayout):
     #
     # OSC callbacks
     #
-    def receive_image(self, message, *args):
+    def receive_jpg(self, message, *args):
         '''
-        Receive preview image chunks and update image once all chunks have
-        been received.
+        Receive preview image and blit it to the preview surface.
         '''
         try:
-            data = message[2]
-            chunk_id = ord(data[0])
-            self.imgbuf += data[1:]
+            jpg = message[2]
         except Exception as ex:
             #print ex
             return
 
-        if numbytes(self.imgsize) == len(self.imgbuf):
-            # image buffer is RGB, convert it to RGBA (Nexus 4 can't blit RGB),
-            # see https://github.com/kivy/kivy/issues/1600
-            img = PilImage.fromstring('RGB', self.imgsize, self.imgbuf)
-            img.putalpha(255)
-            buf = img.tostring()
-            tex = Texture.create(size=self.imgsize, colorfmt='rgba')
-            tex.blit_buffer(buf, colorfmt='rgba', bufferfmt='ubyte')
-            self.image.texture = tex
+        img = PilImage.open(StringIO(jpg))
+        # not clear why (standard?), but the image is upside down
+        img = img.transpose(PilImage.FLIP_TOP_BOTTOM)
+
+        # image buffer is RGB, convert it to RGBA (Nexus 4 can't blit RGB),
+        # see https://github.com/kivy/kivy/issues/1600
+        #img = PilImage.fromstring('RGB', self.imgsize, self.imgbuf)
+        img.putalpha(255)
+        buf = img.tostring()
+        tex = Texture.create(size=img.size, colorfmt='rgba')
+        tex.blit_buffer(buf, colorfmt='rgba', bufferfmt='ubyte')
+        self.image.texture = tex
             
-
-    def receive_imagesize(self, message, *args):
-        '''
-        CameraService sends /imagesize before each frame.
-        Use it to reset image buffer content.
-        '''
-        self.imgsize = pickle.loads(message[2])
-        if numbytes(self.imgsize) != len(self.imgbuf):
-            Logger.warning('image buffer size: %d' % len(self.imgbuf))
-            pass
-        self.imgbuf = ''
-
     def receive_ptz(self, message, *args):
         '''
         Update our pan/tilt/zoom values based on camera's
@@ -119,8 +108,7 @@ class KlpprApp(App):
         self.start_service()
         osc.init()
         oscid = osc.listen(port=3002)
-        osc.bind(oscid, self.calib_screen.receive_image, '/image')
-        osc.bind(oscid, self.calib_screen.receive_imagesize, '/imagesize')
+        osc.bind(oscid, self.calib_screen.receive_jpg, '/jpg')
         osc.bind(oscid, self.calib_screen.receive_ptz, '/ptz')
         Clock.schedule_interval(lambda *x: osc.readQueue(oscid), 0)
         return self.calib_screen
