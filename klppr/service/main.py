@@ -17,6 +17,7 @@ class CameraService(object):
     def __init__(self, camera):
         self.camera = camera
 
+        # using OSC as Android doesn't support POSIX-style IPC
         osc.init()
         self._oscid = osc.listen(port=3000)
         osc.bind(self._oscid, self._pantilt, '/pantilt')
@@ -24,9 +25,12 @@ class CameraService(object):
         osc.bind(self._oscid, self._logout, '/logout')
         osc.bind(self._oscid, self._stop_preview, '/stop_preview')
         osc.bind(self._oscid, self._start_preview, '/start_preview')
+        osc.bind(self._oscid, self._get_ptz, '/get_ptz')
 
         # notify UI of current PTZ state
         osc.sendMsg('/ptz', [pickle.dumps(camera.ptz()),], port=3002)
+        # note: if service is already running when UI starts this
+        # won't happen -- remove?
 
     def _pantilt(self, message, *args):
         pan,tilt = pickle.loads(message[2]) 
@@ -47,6 +51,9 @@ class CameraService(object):
     def _start_preview(self, *args):
         self.camera.start_preview()
 
+    def _get_ptz(self, *args):
+        osc.sendMsg('/ptz', [pickle.dumps(self.camera.ptz()),], port=3002)
+
     def run(self):
         while True:
             # process incoming commands
@@ -63,6 +70,7 @@ class CameraService(object):
                 # Also note that the OS might drop UDP packets if its
                 # receive buffers are small (can be increased in OSCServer by 
                 # using setsockopt).
+                assert(len(jpg) < 64000)
                 osc.sendMsg('/jpg', [jpg,], port=3002, typehint='b')
 
 if __name__ == '__main__':

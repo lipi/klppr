@@ -98,19 +98,22 @@ class CalibScreen(BoxLayout):
         Update our pan/tilt/zoom values based on camera's
         '''
         self.pan,self.tilt,self.zoom = pickle.loads(message[2])
+        Logger.info('ptz: %d,%d,%d' % (self.pan,self.tilt,self.zoom))
 
 class KlpprApp(App):
 
     def build(self):
         self.calib_screen = CalibScreen()
 
-        self.service = None
-        self.start_service()
         osc.init()
         oscid = osc.listen(port=3002)
         osc.bind(oscid, self.calib_screen.receive_jpg, '/jpg')
         osc.bind(oscid, self.calib_screen.receive_ptz, '/ptz')
         Clock.schedule_interval(lambda *x: osc.readQueue(oscid), 0)
+
+        self.service = None
+        self.start_service()
+
         return self.calib_screen
 
     def start_service(self):
@@ -118,7 +121,7 @@ class KlpprApp(App):
             from android import AndroidService
             service = AndroidService('camera service', 'running')
             service.start('service started')
-            self.service = service
+            self.service = service        
 
     def stop_service(self):
         if self.service:
@@ -127,6 +130,7 @@ class KlpprApp(App):
 
     def on_start(self):
         osc.sendMsg('/start_preview', port=3000)
+        osc.sendMsg('/get_ptz', port=3000)
         pass
 
     def on_pause(self):

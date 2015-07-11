@@ -16,7 +16,7 @@ milliseconds.
 On creation it connects to the camera, logs in and:
  - keeps kicking it to maintain the session,
  - fetches images periodically,
- - queues upcontrol commands and executes them in order.
+ - queues up control commands and executes them in order.
 '''
 
 
@@ -24,8 +24,9 @@ class AsyncCamera:
 
     def __init__(self, driver):
         self._driver = driver
-        self._jpg_queue = Queue()
 
+        # NOTE: command queue is not necessary anymore, PTZ commands
+        # create a new thread, login/out could do the same
         self._cmd_queue = Queue() 
         self._cmd_thread = Thread(target=self._control_fn)
         self._cmd_thread.daemon = True
@@ -42,6 +43,7 @@ class AsyncCamera:
         self._kick_thread.daemon = True
         self._kick_thread.start()
 
+        self._jpg_queue = Queue()
         self._is_previewing = False
         self._preview_thread = Thread(target=self._preview_fn)
         self._preview_thread.daemon = True
