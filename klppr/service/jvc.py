@@ -43,7 +43,30 @@ class JVC:
         self.cookies = self.session.cookies
         self.debug = True
 
+        self.init_timeouts()
+
+
+    def init_timeouts(self):
+        '''
+        Initialize connection and read timout values for HTTP requests
+
+        Timeouts are a result of trial-and-error on a wifi network and
+        GSM-to-ADSL connection.
+        '''
+
+        # For further reading see
+        # http://www.stevesouders.com/blog/2011/09/21/making-a-mobile-connection/
+        # control commands seem to have 100-300 msec response time
+        # normally (both GSM and wifi) but jump up to 2-3 secs of
+        # response time after some inactivity, so choosing 5
+        # seconds for connection timeout
+        self.control_timeout = (5,3)
+        self.get_timeout = (3,1)
+        self.kick_timeout = (10,5)
+
+
     def _get(self, uri='/', **kwargs):
+
         '''
         GET the relative path (URI) and return the response.
         May throw exception.
@@ -70,7 +93,7 @@ class JVC:
         return response
 
     def login(self):
-        timeout = (3,1) 
+        timeout = self.get_timeout
         success = False
         try:
             r = self._get('/php/session_start.php', timeout=timeout)
@@ -92,7 +115,7 @@ class JVC:
 
     def kick(self):
         '''Keep opening new sessions same as the web app does'''
-        timeout = (10,5)
+        timeout = self.kick_timeout
         try:
             r1 = self._get('/php/session_continue.php', timeout=timeout)
             r2 = self._get('/php/get_error_code.php', timeout=timeout)
@@ -124,7 +147,7 @@ class JVC:
         try:
             r = self._post('/cgi-bin/cmd.cgi',
                            data = json.dumps(payload),
-                           timeout = (3,1))
+                           timeout = self.control_timeout)
         except Exception as ex:
             print 'pantilt:', ex
 
@@ -134,12 +157,13 @@ class JVC:
         try:
             r = self._post('/cgi-bin/cmd.cgi', 
                            data = json.dumps(payload),
-                           timeout = (3,1))
+                           timeout = self.control_timeout)
         except Exception as ex:
             print 'zoom:', ex
 
     def getptz(self):
-        r = self._get('/cgi-bin/ptz_position.cgi', timeout = (3,1))
+        r = self._get('/cgi-bin/ptz_position.cgi',
+                      timeout = self.get_timeout)
         if r.ok:
             j = r.json()
             data = j['Data']
@@ -165,7 +189,8 @@ class JVC:
         '''Return JPEG image data received from camera or None.'''
         jpg = None
         try:
-            response = self._get('/cgi-bin/get_jpg.cgi', timeout=(3,1))
+            response = self._get('/cgi-bin/get_jpg.cgi',
+                                 timeout=self.get_timeout)
             #img = Image.open(StringIO(response.content))
             jpg = response.content
         except Exception as ex:
