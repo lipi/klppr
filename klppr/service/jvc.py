@@ -6,6 +6,7 @@
 import sys
 import json
 import time
+import logging
 
 import requests
 from requests import Response
@@ -41,7 +42,6 @@ class JVC:
                                                  pool_connections=100, 
                                                  pool_maxsize=100))
         self.cookies = self.session.cookies
-        self.debug = True
 
         self.init_timeouts()
 
@@ -74,8 +74,8 @@ class JVC:
         url = self.url + uri
         url = add_timestamp(url)
         response = self.session.get(url, **kwargs)
-        if self.debug:
-            print 'elapsed:',response.elapsed,'reason:',response.reason
+        logging.info('elapsed: {0} reason: {1}'.format(response.elapsed, 
+                                                       response.reason))
         return response
 
     def _post(self, uri, data, **kwargs):
@@ -85,13 +85,12 @@ class JVC:
         '''
         url = self.url + uri
         url = add_timestamp(url)
-        if self.debug:
-            print 'POST', url, data
+        logging.debug('POST {0} {1}'.format(url, data))
         response = self.session.post(url, data=data, **kwargs)
-        if self.debug:
-            print 'elapsed:',response.elapsed,'reason:',response.reason
+        logging.info('elapsed: {0} reason: {1}'.format(response.elapsed, 
+                                                       response.reason))
         return response
-
+                     
     def login(self):
         timeout = self.get_timeout
         success = False
@@ -109,8 +108,8 @@ class JVC:
             if r.reason == 'OK':
                 success = True
         except Exception as ex:
-            print ex
-            print 'login failed'
+            logging.debug('{0}'.format(ex))
+            logging.info('login failed')
         return success
 
     def kick(self):
@@ -121,24 +120,22 @@ class JVC:
             r2 = self._get('/php/get_error_code.php', timeout=timeout)
             r3 = self._get('/cgi-bin/camera_status.cgi', timeout=timeout)
         except Exception as ex:
-            print 'kick:', ex
+            logging.debug('kick: {0}'.format(ex))
             return False
 
         if r1.reason == 'OK' and r2.reason == 'OK' and r3.reason == 'OK':
-            if self.debug:
-                print 'kick OK'
+            logging.info('kick OK')
             return True
         else:
-            print 'kick failed'
+            logging.warning('kick failed')
             return False
 
     def logout(self):
         try:
             r = self._get('/php/session_finish.php')
         except Exception as ex:
-            print 'logout:', ex
-        if self.debug:
-            print 'logout'
+            logging.info('logout: {0}'.format(ex))
+        logging.info('logout')
 
     def pantilt(self, pan=0, tilt=0):
         cmd = {"Cmd":0,"Pan":pan,"Tilt":tilt}
@@ -149,7 +146,7 @@ class JVC:
                            data = json.dumps(payload),
                            timeout = self.control_timeout)
         except Exception as ex:
-            print 'pantilt:', ex
+            logging.debug('pantilt: {0}'.format(ex))
 
     def zoom(self, zoom=10, speed=1):
         cmd = {"DeciZoomPosition":zoom, "Speed":speed}
@@ -159,7 +156,7 @@ class JVC:
                            data = json.dumps(payload),
                            timeout = self.control_timeout)
         except Exception as ex:
-            print 'zoom:', ex
+            logging.debug('zoom: {0}'.format(ex))
 
     def getptz(self):
         r = self._get('/cgi-bin/ptz_position.cgi',
@@ -179,10 +176,9 @@ class JVC:
         try:
             r = self._get('/cgi-bin/camera_status.cgi')
         except Exception as ex:
-            print 'getstatus:', ex
+            logging.debug('getstatus: {0}'.format(ex))
         j = r.json()
-        if self.debug:
-            print j['Data']['SdcardRemains']
+        logging.debug('{0}'.format(j['Data']['SdcardRemains']))
         return
 
     def getjpg(self):
@@ -194,7 +190,7 @@ class JVC:
             #img = Image.open(StringIO(response.content))
             jpg = response.content
         except Exception as ex:
-            print 'getjpg:', ex
+            logging.debug('getjpg: {0}'.format(ex))
             
         return jpg
 
@@ -211,7 +207,7 @@ class JVC:
         try:
             img.save(filename)
         except IOError as ex:
-            print ex
+            logging.debug('savejpg: {0}'.format(ex))
 
     def test(self, tries=60):
         self.login()

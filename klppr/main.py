@@ -4,6 +4,7 @@
 # 
 
 import pickle
+import logging
 
 import kivy
 kivy.require('1.8.0') # replace with your current kivy version !
@@ -77,7 +78,7 @@ class CalibScreen(BoxLayout):
         try:
             jpg = message[2]
         except Exception as ex:
-            #print ex
+            logging.debug('receive_jpg: {0}'. format(ex))
             return
 
         img = PilImage.open(StringIO(jpg))

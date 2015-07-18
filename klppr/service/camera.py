@@ -3,6 +3,7 @@
 from Queue import Queue, Empty
 from threading import Thread
 from time import sleep
+import logging
 
 '''Asynchronous camera controller
 
@@ -81,7 +82,7 @@ class AsyncCamera:
 
             jpg = self._driver.getjpg()
             if bool(jpg):
-                print 'preview: %d bytes' % len(jpg)
+                logging.info('preview: {0} bytes'.format(len(jpg)))
                 self._jpg_queue.put(jpg)
 
     def close(self):
