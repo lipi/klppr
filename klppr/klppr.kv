@@ -4,11 +4,15 @@
 <CalibScreen>:
     orientation: 'vertical'
     image: image
+    label: label
 
-    BoxLayout:
+    RelativeLayout:
         Image:
             id: image
+            source: 'x.png'
             allow_stretch: True
+        Label:
+            id: label
 
     GridLayout:
         cols: 5

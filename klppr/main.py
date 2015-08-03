@@ -10,6 +10,7 @@ import kivy
 kivy.require('1.8.0') # replace with your current kivy version !
 
 from PIL import Image as PilImage
+
 from StringIO import StringIO
 
 from kivy.app import App
@@ -19,12 +20,14 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.graphics.texture import Texture
-from kivy.properties import ObjectProperty, StringProperty
+from kivy.properties import ObjectProperty, StringProperty, BooleanProperty
 from kivy.properties import NumericProperty, BoundedNumericProperty
 from kivy.logger import Logger
 from kivy.lib import osc
 from kivy.utils import platform
 from kivy.clock import Clock
+from kivy.uix.label import Label
+
 
 def numbytes(imgsize):
     return imgsize[0] * imgsize[1] * 3
@@ -44,6 +47,8 @@ class CalibScreen(BoxLayout):
     pan_speed = NumericProperty(1) # TODO: increase speed while button is held
     tilt_speed = NumericProperty(1)# TODO: increase speed while button is held
     zoom_speed = NumericProperty(1)# TODO: increase speed while button is held
+
+    preview = BooleanProperty(True)
 
     def __init__(self, **kwargs):
         super(CalibScreen, self).__init__(**kwargs)
@@ -67,6 +72,33 @@ class CalibScreen(BoxLayout):
         data = pickle.dumps((self.zoom, self.zoom_speed))
         osc.sendMsg('/zoom', [data,], port=3000)
         
+    def on_touch_down(self, touch):
+        pos = self.image.to_widget(touch.x, touch.y)
+        if self.image.collide_point(*pos):
+            label = self.label
+            center = self.image.center
+            centered_pos = (pos[0] - center[0], pos[1] - center[1])  #touch.pos
+            label.text =  '(%d, %d)' % centered_pos
+            label.texture_update()
+            label.pos = centered_pos
+
+            touch.grab(self)
+
+            if self.preview:
+                osc.sendMsg('/stop_preview', port=3000)
+                self.preview = False
+            else:
+                osc.sendMsg('/start_preview', port=3000)
+                self.preview = True
+            return True
+        
+        self.label.text = ''
+        # touch doesn't belong to us, bubble it up
+        return super(CalibScreen, self).on_touch_down(touch)
+
+    def on_touch_up(self, touch):
+        #self.remove_widget(self.label)
+        pass
 
     #
     # OSC callbacks
