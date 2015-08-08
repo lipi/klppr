@@ -49,6 +49,7 @@ class CalibScreen(BoxLayout):
     zoom_speed = NumericProperty(1)# TODO: increase speed while button is held
 
     preview = BooleanProperty(True)
+    connected = BooleanProperty(False)
 
     def __init__(self, **kwargs):
         super(CalibScreen, self).__init__(**kwargs)
@@ -74,14 +75,8 @@ class CalibScreen(BoxLayout):
         
     def on_touch_down(self, touch):
         pos = self.image.to_widget(touch.x, touch.y)
+        #self.update_pos_label(pos)
         if self.image.collide_point(*pos):
-            label = self.label
-            center = self.image.center
-            centered_pos = (pos[0] - center[0], pos[1] - center[1])  #touch.pos
-            label.text =  '(%d, %d)' % centered_pos
-            label.texture_update()
-            label.pos = centered_pos
-
             touch.grab(self)
 
             if self.preview:
@@ -90,15 +85,37 @@ class CalibScreen(BoxLayout):
             else:
                 osc.sendMsg('/start_preview', port=3000)
                 self.preview = True
+            self.update_status_label(self.connected, self.preview)
+            # touch is handled, discard it
             return True
         
-        self.label.text = ''
         # touch doesn't belong to us, bubble it up
         return super(CalibScreen, self).on_touch_down(touch)
 
     def on_touch_up(self, touch):
         #self.remove_widget(self.label)
         pass
+
+    def update_status_label(self, connected,  preview):
+        text = ''
+        if not connected:
+            text += 'Waiting for camera...\n'
+        if not preview:
+            text += 'Preview paused, touch to continue'
+        self.status_label.text = text
+
+    def update_pos_label(self, pos = None):
+        if self.image.collide_point(*pos):
+            label = self.pos_label
+            center = self.image.center
+            centered_pos = (pos[0] - center[0], pos[1] - center[1])  #touch.pos
+            label.text =  '(%d, %d)' % centered_pos
+            label.texture_update()
+            label.pos = centered_pos
+        else:
+            self.pos_label.text = ''
+            
+            
 
     #
     # OSC callbacks
@@ -113,6 +130,9 @@ class CalibScreen(BoxLayout):
             logging.debug('receive_jpg: {0}'. format(ex))
             return
 
+        self.connected = True
+        self.update_status_label(self.connected, self.preview)
+
         img = PilImage.open(StringIO(jpg))
         # not clear why (standard?), but the image is upside down
         img = img.transpose(PilImage.FLIP_TOP_BOTTOM)
@@ -125,6 +145,7 @@ class CalibScreen(BoxLayout):
         tex = Texture.create(size=img.size, colorfmt='rgba')
         tex.blit_buffer(buf, colorfmt='rgba', bufferfmt='ubyte')
         self.image.texture = tex
+        self.image.allow_stretch = True
             
     def receive_ptz(self, message, *args):
         '''
