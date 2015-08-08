@@ -4,15 +4,25 @@
 <CalibScreen>:
     orientation: 'vertical'
     image: image
-    label: label
+    pos_label: pos_label
+    status_label: status_label
 
     RelativeLayout:
+        canvas.before:
+            Color:
+                rgb: 0, 0, 0
+            Rectangle:
+                # self here refers to the widget i.e RelativeLayout
+                pos: self.pos
+                size: self.size
         Image:
             id: image
-            source: 'x.png'
-            allow_stretch: True
+            size: (0,0) # to avoid white square at startup
         Label:
-            id: label
+            id: pos_label
+        Label:
+            id: status_label
+            text: 'Waiting for camera...'
 
     GridLayout:
         cols: 5
