@@ -1,63 +1,113 @@
 #:kivy 1.0
 #
 
-<CalibScreen>:
+<GpsScreen>:
     orientation: 'vertical'
+    accuracy_label: accuracy_label
+    location_label: location_label
+
+    BoxLayout:
+        GridLayout:
+            cols: 2
+            rows: 4
+            Label:
+                id: location_label
+                text: '--,--'
+            Label:
+                id: accuracy_label
+                text: '--'
+            Label:
+                text: '--,--'
+            Button:
+                text: 'Camera location'
+            Label:
+                text: '--,--'
+            Button:
+                text: 'Subject location'
+            Label:
+                text: ''
+            Button:
+                text: 'Next'
+                on_press:
+                    root.manager.transition.direction = 'left'
+                    root.manager.current = 'calib'
+
+<CalibScreen>:
     image: image
     pos_label: pos_label
     status_label: status_label
 
-    RelativeLayout:
-        canvas.before:
-            Color:
-                rgb: 0, 0, 0
-            Rectangle:
-                # self here refers to the widget i.e RelativeLayout
-                pos: self.pos
-                size: self.size
-        Image:
-            id: image
-            size: (0,0) # to avoid white square at startup
-        Label:
-            id: pos_label
-        Label:
-            id: status_label
-            text: 'Waiting for camera...'
+    BoxLayout:
+        orientation: 'vertical'
 
-    GridLayout:
-        cols: 5
-        rows: 3
 
-        # first row
-        Label:
-        Button:
-            text: 'up'
-            on_press: root.tilt += root.tilt_speed
-        Label:
-        Label:
-        Button:
-            text: 'zoom in'
-            on_press: root.zoom += root.zoom_speed
+        RelativeLayout:
+            size_hint: 1,.4
 
-        # second row
-        Button:
-            text: 'left'
-            on_press: root.pan -= root.pan_speed
-        Label:
-        Button:
-            text: 'right'
-            on_press: root.pan += root.pan_speed
-        Label:
-        Label:
+            canvas.before:
+                Color:
+                    rgb: 0, 0, 0
+                Rectangle:
+                    # self here refers to the widget i.e RelativeLayout
+                    pos: self.pos
+                    size: self.size
+            Image:
+                id: image
+                size: (0,0) # to avoid white square at startup
+            Label:
+                id: pos_label
+            Label:
+                id: status_label
+                text: 'Waiting for camera...'
 
-        # third row
-        Label:
-        Button:
-            text: 'down'
-            on_press: root.tilt -= root.tilt_speed
-        Label:
-        Label:
-        Button:
-            text: 'zoom out'
-            on_press: root.zoom -= root.zoom_speed
+        GridLayout:
+            size_hint: 1,.4
+            cols: 5
+            rows: 3
 
+            # first row
+            Label:
+            Button:
+                text: 'up'
+                on_press: root.tilt += root.tilt_speed
+            Label:
+            Label:
+            Button:
+                text: 'zoom in'
+                on_press: root.zoom += root.zoom_speed
+
+            # second row
+            Button:
+                text: 'left'
+                on_press: root.pan -= root.pan_speed
+            Label:
+            Button:
+                text: 'right'
+                on_press: root.pan += root.pan_speed
+            Label:
+            Label:
+
+            # third row
+            Label:
+            Button:
+                text: 'down'
+                on_press: root.tilt -= root.tilt_speed
+            Label:
+            Label:
+            Button:
+                text: 'zoom out'
+                on_press: root.zoom -= root.zoom_speed
+
+        GridLayout:
+            size_hint: 1,.2
+            cols: 2
+            rows: 1
+
+            Button:
+                text: 'Back'
+                on_press:
+                    root.manager.transition.direction = 'right'
+                    root.manager.current = 'gps'
+
+            Label:
+                text: ''

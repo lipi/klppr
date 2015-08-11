@@ -10,25 +10,35 @@ from kivy.app import App
 from kivy.lib import osc
 from kivy.clock import Clock
 from kivy.utils import platform
+from kivy.uix.screenmanager import ScreenManager, Screen
 
+from gps import GpsScreen
 from calib import CalibScreen
 
 
 class KlpprApp(App):
 
     def build(self):
-        self.calib_screen = CalibScreen()
+        self.gps_screen = GpsScreen(name='gps')
+        self.calib_screen = CalibScreen(name='calib')
 
+        # create the screen manager
+        sm = ScreenManager()
+        sm.add_widget(self.gps_screen)
+        sm.add_widget(self.calib_screen)
+
+        # interprocess comms
         osc.init()
         oscid = osc.listen(port=3002)
         osc.bind(oscid, self.calib_screen.receive_jpg, '/jpg')
         osc.bind(oscid, self.calib_screen.receive_ptz, '/ptz')
         Clock.schedule_interval(lambda *x: osc.readQueue(oscid), 0)
 
+        # start service (Android only)
         self.service = None
         self.start_service()
 
-        return self.calib_screen
+        return sm
 
     def start_service(self):
         if platform() == 'android':
