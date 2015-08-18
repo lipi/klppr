@@ -16,7 +16,7 @@ milliseconds.
 
 On creation it connects to the camera, logs in and:
  - keeps kicking it to maintain the session,
- - fetches images periodically,
+ - fetches images periodically (if required),
  - queues up control commands and executes them in order.
 '''
 
