@@ -15,6 +15,11 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from gps import GpsScreen
 from calib import CalibScreen
 
+rx_port = 3002
+tx_port = 3000
+
+def send(msg):
+    osc.sendMsg(msg, port=tx_port)
 
 class KlpprApp(App):
 
@@ -29,9 +34,10 @@ class KlpprApp(App):
 
         # interprocess comms
         osc.init()
-        oscid = osc.listen(port=3002)
+        oscid = osc.listen(port=rx_port)
         osc.bind(oscid, self.calib_screen.receive_jpg, '/jpg')
         osc.bind(oscid, self.calib_screen.receive_ptz, '/ptz')
+        osc.bind(oscid, self.gps_screen.receive_location, '/location')
         Clock.schedule_interval(lambda *x: osc.readQueue(oscid), 0)
 
         # start service (Android only)
@@ -53,21 +59,21 @@ class KlpprApp(App):
             self.service = None
 
     def on_start(self):
-        osc.sendMsg('/start_preview', port=3000)
-        osc.sendMsg('/get_ptz', port=3000)
+        send('/start_preview')
+        send('/get_ptz')
         pass
 
     def on_pause(self):
         # avoid unnecessary traffic (image download)
-        osc.sendMsg('/stop_preview', port=3000)
+        send('/stop_preview')
         return True # avoid on_stop being called
 
     def on_resume(self):
-        osc.sendMsg('/start_preview', port=3000)
+        send('/start_preview')
         pass
     
     def on_stop(self):
-        osc.sendMsg('/logout', port=3000)
+        send('/logout')
         osc.dontListen()
         return
 

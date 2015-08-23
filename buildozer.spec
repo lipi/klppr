@@ -33,11 +33,11 @@ version = 0.0.1
 
 # (list) Application requirements
 # comma seperated e.g. requirements = sqlite3,kivy
-requirements = pil,requests,kivy
+requirements = pil,requests,plyer,kivy
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
-# requirements.source.kivy = ../../kivy
+#requirements.source.plyer = ../git/plyer
 
 # (list) Garden requirements
 #garden_requirements =
@@ -60,7 +60,7 @@ fullscreen = 1
 #
 
 # (list) Permissions
-android.permissions = INTERNET, ACCESS_FINE_LOCATION
+android.permissions = INTERNET,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION
 
 # (int) Android API to use
 #android.api = 14

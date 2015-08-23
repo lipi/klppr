@@ -3,16 +3,25 @@ import pickle
 
 from kivy.lib import osc
 
-class CameraService(object):
 
-    def __init__(self, camera):
+class CameraService(object):
+    """
+    Recieves camera control commands.
+    Sends preview images.
+    Works over OSC.
+    """
+
+    def __init__(self, camera, rx_port, tx_port):
 
         # initialize camera
         self.camera = camera
 
+        self.rx_port = rx_port
+        self.tx_port = tx_port
+
         # using OSC as Android doesn't support POSIX-style IPC
         osc.init()
-        self._oscid = osc.listen(port=3000)
+        self._oscid = osc.listen(port=rx_port)
         osc.bind(self._oscid, self._pantilt, '/pantilt')
         osc.bind(self._oscid, self._zoom, '/zoom')
         osc.bind(self._oscid, self._logout, '/logout')
@@ -21,10 +30,10 @@ class CameraService(object):
         osc.bind(self._oscid, self._get_ptz, '/get_ptz')
 
         # notify UI of current PTZ state
-        osc.sendMsg('/ptz', [pickle.dumps(camera.ptz()),], port=3002)
+        osc.sendMsg('/ptz', [pickle.dumps(camera.ptz()), ],
+                    port=self.tx_port)
         # note: if service is already running when UI starts this
         # won't happen -- remove?
-
 
     def _pantilt(self, message, *args):
         pan,tilt = pickle.loads(message[2]) 
@@ -46,7 +55,8 @@ class CameraService(object):
         self.camera.start_preview()
 
     def _get_ptz(self, *args):
-        osc.sendMsg('/ptz', [pickle.dumps(self.camera.ptz()),], port=3002)
+        osc.sendMsg('/ptz', [pickle.dumps(self.camera.ptz()), ],
+                    port=self.tx_port)
 
     def run(self):
         while True:
@@ -65,4 +75,4 @@ class CameraService(object):
                 # receive buffers are small (can be increased in OSCServer by 
                 # using setsockopt).
                 assert(len(jpg) < 64000)
-                osc.sendMsg('/jpg', [jpg,], port=3002, typehint='b')
+                osc.sendMsg('/jpg', [jpg,], port=self.tx_port, typehint='b')

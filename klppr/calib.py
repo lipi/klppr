@@ -4,18 +4,14 @@ from PIL import Image as PilImage
 from StringIO import StringIO
 
 import kivy
-kivy.require('1.8.0') # replace with your current kivy version !
 
-from kivy.uix.button import Button
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.image import Image
-from kivy.uix.label import Label
+kivy.require('1.8.0')  # replace with your current kivy version !
+
 from kivy.graphics.texture import Texture
-from kivy.properties import ObjectProperty, StringProperty, BooleanProperty
+from kivy.properties import ObjectProperty, BooleanProperty
 from kivy.properties import NumericProperty, BoundedNumericProperty
 from kivy.logger import Logger
 from kivy.lib import osc
-from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 
 
@@ -31,9 +27,9 @@ class CalibScreen(Screen):
     zoom = BoundedNumericProperty(10, min=10, max=100, 
                                   errorhandler=lambda x: 100 if x > 100 else 10)
 
-    pan_speed = NumericProperty(1) # TODO: increase speed while button is held
-    tilt_speed = NumericProperty(1)# TODO: increase speed while button is held
-    zoom_speed = NumericProperty(1)# TODO: increase speed while button is held
+    pan_speed = NumericProperty(1)  # TODO: increase speed while button is held
+    tilt_speed = NumericProperty(1)  # TODO: increase speed while button is held
+    zoom_speed = NumericProperty(1)  # TODO: increase speed while button is held
 
     preview = BooleanProperty(True)
     connected = BooleanProperty(False)
@@ -95,22 +91,20 @@ class CalibScreen(Screen):
         if self.image.collide_point(*pos):
             label = self.pos_label
             center = self.image.center
-            centered_pos = (pos[0] - center[0], pos[1] - center[1])  #touch.pos
-            label.text =  '(%d, %d)' % centered_pos
+            centered_pos = (pos[0] - center[0], pos[1] - center[1])  # touch.pos
+            label.text = '(%d, %d)' % centered_pos
             label.texture_update()
             label.pos = centered_pos
         else:
             self.pos_label.text = ''
-            
-            
 
     #
     # OSC callbacks
     #
     def receive_jpg(self, message, *args):
-        '''
+        """
         Receive preview image and blit it to the preview surface.
-        '''
+        """
         try:
             jpg = message[2]
         except Exception as ex:
@@ -126,7 +120,7 @@ class CalibScreen(Screen):
 
         # image buffer is RGB, convert it to RGBA (Nexus 4 can't blit RGB),
         # see https://github.com/kivy/kivy/issues/1600
-        #img = PilImage.fromstring('RGB', self.imgsize, self.imgbuf)
+        # img = PilImage.fromstring('RGB', self.imgsize, self.imgbuf)
         img.putalpha(255)
         buf = img.tostring()
         tex = Texture.create(size=img.size, colorfmt='rgba')
@@ -135,8 +129,10 @@ class CalibScreen(Screen):
         self.image.allow_stretch = True
             
     def receive_ptz(self, message, *args):
-        '''
+        """
         Update our pan/tilt/zoom values based on camera's
-        '''
+        """
         self.pan,self.tilt,self.zoom = pickle.loads(message[2])
         Logger.info('ptz: %d,%d,%d' % (self.pan,self.tilt,self.zoom))
+
+    
