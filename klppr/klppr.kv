@@ -3,6 +3,8 @@
 
 <GpsScreen>:
     orientation: 'vertical'
+
+    # TODO: change color momentarily when value changes
     accuracy_label: accuracy_label
     location_label: location_label
 
@@ -17,13 +19,15 @@
                 id: accuracy_label
                 text: root.accuracy
             Label:
-                text: '--,--'
+                text: root.camera_location
             Button:
                 text: 'Camera location'
+                on_press: root.on_camera_button()
             Label:
-                text: '--,--'
+                text: root.subject_location
             Button:
                 text: 'Subject location'
+                on_press: root.on_subject_button()
             Label:
                 text: ''
             Button:
@@ -109,5 +113,45 @@
                     root.manager.transition.direction = 'right'
                     root.manager.current = 'gps'
 
+            Button:
+                text: 'Next'
+                on_press:
+                    root.manager.transition.direction = 'left'
+                    root.manager.current = 'record'
+
+<RecordScreen>:
+    orientation: 'vertical'
+
+    BoxLayout:
+        GridLayout:
+            cols: 2
+            rows: 4
             Label:
+                size_hint: .5,.2
+                text: root.gps_accuracy                
+            Label:
+                size_hint: .5,.2
+                text: root.network_latency
+            Label:
+                size_hint: .5,.2
+                text: 'Recording:'
+            Label:
+                size_hint: .5,.2
+                text: root.recording_time
+            Button:
+                size_hint: .5,.2
+                text: 'Start'
+                on_press: root.on_start()
+            Button:
+                size_hint: .5,.4
+                text: 'Stop'
+                on_press: root.on_stop()
+            Button:
+                size_hint: .5,.4
+                text: 'Previous'
+                on_press:
+                    root.manager.transition.direction = 'right'
+                    root.manager.current = 'calib'
+            Label:
+                size_hint: .5,.2
                 text: ''

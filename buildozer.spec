@@ -37,7 +37,7 @@ requirements = pil,requests,plyer,kivy
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
-#requirements.source.plyer = ../git/plyer
+requirements.source.plyer = ../git/plyer
 
 # (list) Garden requirements
 #garden_requirements =

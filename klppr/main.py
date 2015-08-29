@@ -4,16 +4,16 @@
 # 
 
 import kivy
+from screen import CalibScreen, GpsScreen, RecordScreen
+
 kivy.require('1.8.0') # replace with your current kivy version !
 
 from kivy.app import App
 from kivy.lib import osc
 from kivy.clock import Clock
 from kivy.utils import platform
-from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.screenmanager import ScreenManager
 
-from gps import GpsScreen
-from calib import CalibScreen
 
 rx_port = 3002
 tx_port = 3000
@@ -26,11 +26,13 @@ class KlpprApp(App):
     def build(self):
         self.gps_screen = GpsScreen(name='gps')
         self.calib_screen = CalibScreen(name='calib')
+        self.record_screen = RecordScreen(name='record')
 
         # create the screen manager
         sm = ScreenManager()
         sm.add_widget(self.gps_screen)
         sm.add_widget(self.calib_screen)
+        sm.add_widget(self.record_screen)
 
         # interprocess comms
         osc.init()

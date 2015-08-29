@@ -34,7 +34,7 @@ class LocationService(object):
         self.tx_port = tx_port
 
     def on_location(self, **kwargs):
-        # TODO: duplicte calls -- plyer issue? 
+        # TODO: duplicate calls -- check providers in plyer/android/gps
         osc.sendMsg('/location', [pickle.dumps(kwargs), ],
                     port=self.tx_port)
 
