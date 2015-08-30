@@ -152,7 +152,7 @@ class JVC:
         cmd = {"DeciZoomPosition":zoom, "Speed":speed}
         payload = {"Command": "SetZoomPosition", "Params":cmd }
         try:
-            r = self._post('/cgi-bin/cmd.cgi', 
+            r = self._post('/cgi-bin/cmd.cgi',
                            data = json.dumps(payload),
                            timeout = self.control_timeout)
         except Exception as ex:
@@ -208,6 +208,27 @@ class JVC:
             img.save(filename)
         except IOError as ex:
             logging.debug('savejpg: {0}'.format(ex))
+
+    def _recording(self, ctrl):
+        payload = {"Command": "SetCamCtrl", "Params": {"Ctrl": ctrl}}
+        try:
+            self._post('/cgi-bin/cmd.cgi',
+                       data=json.dumps(payload),
+                       timeout=self.control_timeout)
+        except Exception as ex:
+            logging.debug('recording: {0}'.format(ex))
+
+    def start_recording(self):
+        """
+        Start recording video to SD card
+        """
+        self._recording("RecStart")
+
+    def stop_recording(self):
+        """
+        Stop recording video
+        """
+        self._recording("RecStop")
 
     def test(self, tries=60):
         self.login()

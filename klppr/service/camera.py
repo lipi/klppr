@@ -28,6 +28,8 @@ class CameraService(object):
         osc.bind(self._oscid, self._stop_preview, '/stop_preview')
         osc.bind(self._oscid, self._start_preview, '/start_preview')
         osc.bind(self._oscid, self._get_ptz, '/get_ptz')
+        osc.bind(self._oscid, self._stop_recording, '/stop_recording')
+        osc.bind(self._oscid, self._start_recording, '/start_recording')
 
         # notify UI of current PTZ state
         osc.sendMsg('/ptz', [pickle.dumps(camera.ptz()), ],
@@ -57,6 +59,13 @@ class CameraService(object):
     def _get_ptz(self, *args):
         osc.sendMsg('/ptz', [pickle.dumps(self.camera.ptz()), ],
                     port=self.tx_port)
+
+    #  TODO: use decorator
+    def _stop_recording(self, *args):
+        self.camera.stop_recording()
+
+    def _start_recording(self, *args):
+        self.camera.start_recording()
 
     def run(self):
         while True:

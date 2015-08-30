@@ -122,3 +122,10 @@ class AsyncCamera:
 
     def stop_preview(self):
         self._is_previewing = False
+
+    # TODO: use decorator
+    def start_recording(self):
+        Thread(target=self._driver.start_recording).start()
+
+    def stop_recording(self):
+        Thread(target=self._driver.stop_recording).start()

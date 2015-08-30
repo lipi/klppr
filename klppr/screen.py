@@ -200,7 +200,9 @@ class RecordScreen(Screen):
         super(RecordScreen, self).__init__(**kwargs)
 
     def on_stop(self):
+        osc.sendMsg('/stop_recording', port=3000)
         print 'stop recording'
 
     def on_start(self):
+        osc.sendMsg('/start_recording', port=3000)
         print 'start recording'
