@@ -16,6 +16,8 @@ def distance(a, b):
     >>> distance(Location(-36,174), Location(-36.0002,174.0001))
     23.989533843446072
     """
+    if not (valid(a) and valid(b)):
+        return 0.0
     latlons = [a.lat, a.lon, b.lat, b.lon]
     lat1, lon1, lat2, lon2 = [radians(float(x)) for x in latlons]
     # calculate haversine
@@ -31,8 +33,10 @@ def bearing(a, b):
     Return bearing in degrees between Locations a and b (from a to b)
 
     >>> bearing(Location(-36,174), Location(-36.0002,174.0001))
-    157.9763041275417
+    157.97630412754177
     """
+    if not (valid(a) and valid(b)):
+        return 0.0
     latlons = [a.lat, a.lon, b.lat, b.lon]
     lat1, lon1, lat2, lon2 = [radians(float(x)) for x in latlons]
 
@@ -50,8 +54,28 @@ def elevation(a, b):
     >>> elevation(Location(-36,174,0), Location(-36.0002,174.0001,2))
     4.765710402503897
     """
-    elev = atan((b.alt - a.alt) / distance(a, b))
+    if not (valid(a) and valid(b)):
+        return 0.0
+    d = distance(a, b)
+    if d == 0:
+        return 0.0
+    elev = atan((b.alt - a.alt) / d)
     return degrees(elev)
+
+
+def valid(location):
+    """
+    :return: True if location is valid
+
+    >>> valid(Location())
+    False
+    >>> valid(Location(0,0))
+    True
+    """
+    v = ((location.lat != None) and
+         (location.lon != None) and
+         (location.alt != None))
+    return v
 
 
 class Location(object):
@@ -60,7 +84,10 @@ class Location(object):
     Location with geo location in degrees and altitude in meters.
     """
 
-    def __init__(self, lat=None, lon=None, alt=None):
+    # TODO: is it really needed? could be a tuple
+    # The only point is avoiding mixing up lat/lon and having a default value for altitude
+    # Could also force float() conversion, so any math operations would use floating point
+    def __init__(self, lat=None, lon=None, alt=0):
         """
         Location object
         :param lat: latitude in degrees
@@ -75,3 +102,6 @@ class Location(object):
     def __repr__(self):
         return str((self.lat, self.lon, self.alt))
 
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
