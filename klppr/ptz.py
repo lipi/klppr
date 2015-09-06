@@ -1,45 +1,9 @@
 
-def limit_pan(x):
-    """
-    Limit pan to -180..180 range, with wrap-around
+"""
+Pan-Tilt-Zoom value handling
+"""
 
-    >>> limit_pan(181)
-    -179
-    >>> limit_pan(180)
-    180
-    >>> limit_pan(-181)
-    179
-    >>> limit_pan(360)
-    0
-    >>> limit_pan(540)
-    180
-    """
-
-    # TODO: limit to camera's actual range?
-    if (x % 360) == 180:
-        return 180
-    return ((x + 180) % 360) - 180
-
-
-def limit_tilt(x):
-    """
-    Limit tilt to -90..90 range, without wrap-around
-
-    >>> limit_tilt(91)
-    90
-    >>> limit_tilt(90)
-    90
-    >>> limit_tilt(-91)
-    -90
-    >>> limit_tilt(360)
-    90
-    >>> limit_tilt(-540)
-    -90
-    """
-
-    # TODO: limit to camera's actual range?
-    # TODO: consider using numpy.clip() instead
-    return clamp(x, -90, 90)
+from klppr.limit import *
 
 
 def limit_zoom(x):
@@ -48,10 +12,6 @@ def limit_zoom(x):
     """
     # TODO: limit to camera's actual range?
     return clamp(x, 1, 10)
-
-
-def clamp(x, x_min, x_max):
-    return min(x_max, max(x, x_min))
 
 
 class PTZ(object):
@@ -89,9 +49,8 @@ class PTZ(object):
 
     @pan.setter
     def pan(self, x):
-        x = limit_pan(x)
         # forcing float point arithmetic when used later on
-        self._pan = float(x)
+        self._pan = float(limit_pan(x))
 
     @property
     def tilt(self):
@@ -99,9 +58,8 @@ class PTZ(object):
 
     @tilt.setter
     def tilt(self, x):
-        x = limit_tilt(x)
         # forcing float point arithmetic when used later on
-        self._tilt = float(x)
+        self._tilt = float(limit_tilt(x))
 
     @property
     def zoom(self):
@@ -109,8 +67,7 @@ class PTZ(object):
 
     @zoom.setter
     def zoom(self, x):
-        x = limit_zoom(x)
-        self._zoom = float(x)
+        self._zoom = float(limit_zoom(x))
 
 if __name__ == "__main__":
     import doctest
