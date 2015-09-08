@@ -10,11 +10,11 @@ def distance(a, b):
     Return distance in meters between Locations a and b
 
     >>> distance(Location(0,0), Location(1,0))
-    111194.92664455874
+    111195.0
     >>> distance(Location(-36,174), Location(-36.02,174.01))
-    2398.911028504046
+    2399.0
     >>> distance(Location(-36,174), Location(-36.0002,174.0001))
-    23.98953384258774
+    24.0
     """
     if not (valid(a) and valid(b)):
         return 0.0
@@ -25,7 +25,7 @@ def distance(a, b):
     lon = lon2 - lon1
     alpha = sin(lat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(lon / 2) ** 2
     dist = 2 * AVG_EARTH_RADIUS_KM * 1000 * asin(sqrt(alpha))
-    return dist
+    return round(dist)
 
 
 def bearing(a, b):
@@ -33,7 +33,10 @@ def bearing(a, b):
     Return bearing in degrees between Locations a and b (from a to b)
 
     >>> bearing(Location(-36,174), Location(-36.0002,174.0001))
-    157.97630413260958
+    157.976
+    >>> # see http://www.gpsvisualizer.com/calculators#distance
+    >>> bearing(Location(0, 0), Location(1, 1))
+    44.996
     """
     if not (valid(a) and valid(b)):
         return 0.0
@@ -44,7 +47,7 @@ def bearing(a, b):
                   cos(lat1)*sin(lat2) - sin(lat1)*cos(lat2)*cos(lon2-lon1))
     alpha = degrees(alpha)
     alpha = (alpha + 360) % 360
-    return alpha
+    return round(alpha, 3)
 
 
 def elevation(a, b):
@@ -52,7 +55,7 @@ def elevation(a, b):
     Return elevation in degrees between Locations a and b (from a to b)
 
     >>> elevation(Location(-36,174,0), Location(-36.0002,174.0001,2))
-    4.765710402673626
+    4.764
     """
     if not (valid(a) and valid(b)):
         return 0.0
@@ -60,7 +63,7 @@ def elevation(a, b):
     if d == 0:
         return 0.0
     elev = atan((b.alt - a.alt) / d)
-    return degrees(elev)
+    return round(degrees(elev), 3)
 
 
 def valid(location):
@@ -112,7 +115,7 @@ class Location(object):
 
     @lat.setter
     def lat(self, x):
-        self._lat = float(limit_tilt(x))
+        self._lat = limit_tilt(x)
 
     @property
     def lon(self):
@@ -120,7 +123,7 @@ class Location(object):
 
     @lon.setter
     def lon(self, x):
-        self._lon = float(limit_pan(x))
+        self._lon = limit_pan(x)
 
     @property
     def alt(self):
@@ -128,7 +131,7 @@ class Location(object):
 
     @alt.setter
     def alt(self, x):
-        self._alt = float(x)
+        self._alt = x
 
 
 if __name__ == "__main__":

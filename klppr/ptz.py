@@ -25,9 +25,9 @@ class PTZ(object):
     - zoom in the 1..10 range
 
     >>> PTZ()
-    (0.0, 0.0, 1.0)
+    (0, 0, 1)
     >>> PTZ(181, -91, 11)
-    (-179.0, -90.0, 10.0)
+    (-179, -90, 10)
     """
 
     def __init__(self, pan=0, tilt=0, zoom=0):
@@ -50,7 +50,7 @@ class PTZ(object):
     @pan.setter
     def pan(self, x):
         # forcing float point arithmetic when used later on
-        self._pan = float(limit_pan(x))
+        self._pan = limit_pan(x)
 
     @property
     def tilt(self):
@@ -59,7 +59,7 @@ class PTZ(object):
     @tilt.setter
     def tilt(self, x):
         # forcing float point arithmetic when used later on
-        self._tilt = float(limit_tilt(x))
+        self._tilt = limit_tilt(x)
 
     @property
     def zoom(self):
@@ -67,7 +67,7 @@ class PTZ(object):
 
     @zoom.setter
     def zoom(self, x):
-        self._zoom = float(limit_zoom(x))
+        self._zoom = limit_zoom(x)
 
 if __name__ == "__main__":
     import doctest
