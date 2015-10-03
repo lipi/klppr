@@ -1,17 +1,8 @@
 
-"""
-Camera calibrator
-
-Calculate calibration values based on:
-- subject location (lat,lon,alt)
-- camera location (lat,lon,alt)
-- camera orientation (pan,tilt,zoom)
-Provide calibration values (for tracker).
-Store calibration values for subsequent sessions.
-
-"""
 import ConfigParser
 from ConfigParser import NoOptionError, NoSectionError
+
+from kivy.logger import Logger
 
 from klppr.location import *
 from klppr.ptz import PTZ
@@ -19,8 +10,48 @@ from klppr.ptz import PTZ
 CALIBRATION_FILE = 'calib.cfg'
 
 
+class CalibrationService(object):
+
+    def __init__(self, location_service, camera_service, **kwargs):
+        super(CalibrationService, self).__init__(**kwargs)
+        self.location_service = location_service
+        self.camera_service = camera_service
+        self.calibrator = Calibrator()
+
+    def at_camera(self):
+        self.calibrator.location = self.location_service.gps_location
+
+    def at_subject(self):
+        subject_location = self.location_service.gps_location
+        camera_ptz = self.camera_service.ptz()  # TODO: change it to property, too
+        correction = self.calibrator.calibrate(self.camera_location,
+                                               subject_location,
+                                               camera_ptz)
+        Logger.info(correction)
+        # TODO: notify tracker when calibration changes
+
+
+class CalibrationServiceOsc(CalibrationService):
+
+    def __init__(self, connector, **kwargs):
+        super(CalibrationServiceOsc, self).__init__(**kwargs)
+        self.connector = connector
+        self.connector.connect(self.at_camera, '/at_camera')
+        self.connector.connect(self.at_subject, '/at_subject')
+
+
 class Calibrator(object):
     """
+    Camera calibrator
+
+    Calculate calibration values based on:
+    - subject location (lat,lon,alt)
+    - camera location (lat,lon,alt)
+    - camera orientation (pan,tilt,zoom)
+
+    Provide calibration values (camera location and correction).
+    Store calibration values for subsequent sessions.
+
     >>> Calibrator()
     ((0, 0, 0), (0, 0, 1))
     """

@@ -95,7 +95,7 @@ class AsyncCamera:
         # Create a thread for the potentially long-running command.
         # This means commands can run parallel (out-of-order).
         # If this is not desirable (not sure?) use the command queue.
-        Thread(target=self._driver.pantilt, args=(pan,tilt)).start()
+        Thread(target=self._driver.pantilt, args=(pan, tilt)).start()
         
     def zoom(self, zoom=10, speed=1):
         '''Set zoom level using given speed'''
@@ -115,7 +115,7 @@ class AsyncCamera:
         return jpg
 
     def ptz(self):
-        return self._pan,self._tilt,self._zoom
+        return self._pan, self._tilt, self._zoom
 
     def start_preview(self):
         self._is_previewing = True

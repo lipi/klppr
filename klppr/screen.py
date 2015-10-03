@@ -1,7 +1,6 @@
 
 from PIL import Image as PilImage
 from StringIO import StringIO
-import logging
 import pickle
 
 import kivy
@@ -10,16 +9,55 @@ kivy.require('1.8.0')  # replace with your current kivy version !
 
 from kivy.graphics.texture import Texture
 from kivy.properties import ObjectProperty, BooleanProperty
-from kivy.properties import NumericProperty, BoundedNumericProperty
 from kivy.properties import StringProperty
 from kivy.logger import Logger
-from kivy.lib import osc
 from kivy.uix.screenmanager import Screen
 
-__author__ = 'lipi'
+
+class GpsScreen(Screen):
+    """
+    GPS calibration screen
+
+    - monitor GPS quality
+    - save camera location
+    """
+
+    current_location = StringProperty('--')
+    current_accuracy = StringProperty('--')
+    subject_location = StringProperty('--')
+    camera_location = StringProperty('--')
+
+    def __init__(self, connector, **kwargs):
+        super(GpsScreen, self).__init__(**kwargs)
+        self.connector = connector
+        self.connector.connect(self.receive_location, '/location')
+
+    def receive_location(self, message, *args):
+        """
+        Update our pan/tilt/zoom values based on camera's
+        """
+        location = pickle.loads(message[2])
+        Logger.info('location: %s' % location)
+        self.current_location = "%f\n%f\n%.1f" % (location['lat'],
+                                                  location['lon'],
+                                                  location['altitude'])
+        try:
+            self.current_accuracy = "%.1f" % location['accuracy']
+        except KeyError:
+            Logger.error("accuracy not available")
+
+    def on_camera_button(self):
+        self.camera_location = self.current_location
+        self.connector.send('/at_camera')
+        Logger.debug('camera')
+
+    def on_subject_button(self):
+        self.subject_location = self.current_location
+        self.connector.send('/at_subject')
+        Logger.debug('subject')
 
 
-class CalibScreen(Screen):
+class CameraScreen(Screen):
     """
     PTZ calibration screen
 
@@ -28,76 +66,52 @@ class CalibScreen(Screen):
     """
 
     image = ObjectProperty()
+    ptz = StringProperty()
 
-    # TODO: use camera-specific values instead of hardcoded ones
-    pan = BoundedNumericProperty(0, min=-150, max=150,
-                                 errorhandler=lambda x: 150 if x > 150 else -150)
-    tilt = BoundedNumericProperty(0, min=-40, max=40,
-                                  errorhandler=lambda x: 40 if x > 40 else -40)
-    zoom = BoundedNumericProperty(10, min=10, max=100,
-                                  errorhandler=lambda x: 100 if x > 100 else 10)
-
-    pan_speed = NumericProperty(1)  # TODO: increase speed while button is held
-    tilt_speed = NumericProperty(1)  # TODO: increase speed while button is held
-    zoom_speed = NumericProperty(1)  # TODO: increase speed while button is held
-
-    preview = BooleanProperty(True)
+    previewing = BooleanProperty(True)
     connected = BooleanProperty(False)
 
-    def __init__(self, **kwargs):
-        super(CalibScreen, self).__init__(**kwargs)
+    def __init__(self, connector, **kwargs):
+        super(CameraScreen, self).__init__(**kwargs)
+        self.connector = connector
+        self.connector.connect(self.receive_jpg, '/jpg')
+        self.connector.connect(self.receive_ptz, '/ptz')
 
     #
     # Camera control
     #
 
-    def on_pan(self, instance, pos):
-        Logger.info('pan: %d' % self.pan)
-        data = pickle.dumps((self.pan, self.tilt))
-        osc.sendMsg('/pantilt', [data,], port=3000)
-
-    def on_tilt(self, instance, pos):
-        Logger.info('tilt: %d' % self.tilt)
-        data = pickle.dumps((self.pan, self.tilt))
-        osc.sendMsg('/pantilt', [data,], port=3000)
-
-    def on_zoom(self, instance, pos):
-        Logger.info('zoom: %d' % self.zoom)
-        data = pickle.dumps((self.zoom, self.zoom_speed))
-        osc.sendMsg('/zoom', [data,], port=3000)
-
     def on_touch_down(self, touch):
         pos = self.image.to_widget(touch.x, touch.y)
-        #self.update_pos_label(pos)
         if self.image.collide_point(*pos):
             touch.grab(self)
 
-            if self.preview:
-                osc.sendMsg('/stop_preview', port=3000)
-                self.preview = False
+            if self.previewing:
+                self.connector.send('/stop_preview')
+                self.previewing = False
             else:
-                osc.sendMsg('/start_preview', port=3000)
-                self.preview = True
-            self.update_status_label(self.connected, self.preview)
+                self.connector.send('/start_preview')
+                self.previewing = True
+            self.update_status_label(self.connected, self.previewing)
             # touch is handled, discard it
             return True
 
         # touch doesn't belong to us, bubble it up
-        return super(CalibScreen, self).on_touch_down(touch)
+        return super(CameraScreen, self).on_touch_down(touch)
 
-    def on_touch_up(self, touch):
-        #self.remove_widget(self.label)
-        pass
-
-    def update_status_label(self, connected,  preview):
+    def update_status_label(self, connected,  previewing):
         text = ''
         if not connected:
             text += 'Waiting for camera...\n'
-        if not preview:
+        if not previewing:
             text += 'Preview paused, touch to continue'
         self.status_label.text = text
 
-    def update_pos_label(self, pos = None):
+    # not used at moment, left here for reference
+    def update_pos_label(self, pos=None):
+        """
+        Display touch position over preview image
+        """
         if self.image.collide_point(*pos):
             label = self.pos_label
             center = self.image.center
@@ -118,11 +132,11 @@ class CalibScreen(Screen):
         try:
             jpg = message[2]
         except Exception as ex:
-            logging.debug('receive_jpg: {0}'. format(ex))
+            Logger.debug('receive_jpg: {0}'. format(ex))
             return
 
         self.connected = True
-        self.update_status_label(self.connected, self.preview)
+        self.update_status_label(self.connected, self.previewing)
 
         img = PilImage.open(StringIO(jpg))
         # not clear why (standard?), but the image is upside down
@@ -142,46 +156,9 @@ class CalibScreen(Screen):
         """
         Update our pan/tilt/zoom values based on camera's
         """
-        self.pan,self.tilt,self.zoom = pickle.loads(message[2])
-        Logger.info('ptz: %d,%d,%d' % (self.pan,self.tilt,self.zoom))
-
-
-class GpsScreen(Screen):
-    """
-    GPS calibration screen
-
-    - monitor GPS quality
-    - save camera location
-    """
-
-    latlon = StringProperty('1,2')
-    accuracy = StringProperty('-')
-    subject_location = StringProperty('--')
-    camera_location = StringProperty('--')
-
-    def __init__(self, **kwargs):
-        super(GpsScreen, self).__init__(**kwargs)
-
-    def receive_location(self, message, *args):
-        """
-        Update our pan/tilt/zoom values based on camera's
-        """
-        loc = pickle.loads(message[2])
-        Logger.info('location: %s' % loc)
-        self.latlon = "%f\n%f\n%.1f" % (loc['lat'], loc['lon'], loc['altitude'])
-        try:
-            self.accuracy = "%.1f" % loc['accuracy']
-        except:
-            Logger.error("accuracy not available")
-
-
-    def on_camera_button(self):
-        self.camera_location = self.latlon
-        print 'camera'
-
-    def on_subject_button(self):
-        self.subject_location = self.latlon
-        print 'subject'
+        pan, tilt, zoom = pickle.loads(message[2])
+        self.ptz = '%d,%d,%d' % (pan, tilt, zoom)
+        Logger.info('ptz: %s' % self.ptz)
 
 
 class RecordScreen(Screen):
@@ -196,13 +173,29 @@ class RecordScreen(Screen):
     network_latency = StringProperty("0.0 sec")
     recording_time = StringProperty("0:00:00")
 
-    def __init__(self, **kwargs):
+    def __init__(self, connector, **kwargs):
         super(RecordScreen, self).__init__(**kwargs)
+        self.connector = connector
 
     def on_stop(self):
-        osc.sendMsg('/stop_recording', port=3000)
-        print 'stop recording'
+        self.connector.send('/stop_recording')
+        Logger.info('stop recording')
 
     def on_start(self):
-        osc.sendMsg('/start_recording', port=3000)
-        print 'start recording'
+        self.connector.send('/start_recording')
+        Logger.info('start recording')
+
+    def receive_recording_time(self, message, *args):
+        # TODO: display recording time
+        pass
+
+    def receive_network_latency(self, message, *args):
+        # TODO: display network latency
+        pass
+
+    def receive_location(self,  message, *args):
+        location = pickle.loads(message[2])
+        try:
+            self.gps_accuracy = '%s m' % location['accuracy']
+        except KeyError:
+            Logger.error("accuracy not available")

@@ -7,9 +7,9 @@ import sys
 import json
 import time
 import logging
+logging.basicConfig(level=logging.DEBUG)
 
 import requests
-from requests import Response
 from requests.auth import HTTPDigestAuth
 from requests.adapters import HTTPAdapter
 
@@ -191,7 +191,7 @@ class JVC:
             jpg = response.content
         except Exception as ex:
             logging.debug('getjpg: {0}'.format(ex))
-            
+
         return jpg
 
     def getimg(self):

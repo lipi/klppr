@@ -1,43 +1,59 @@
 
 import pickle
+from kivy.event import EventDispatcher
 
-from kivy.lib import osc
-from kivy.clock import Clock
+from kivy.logger import Logger
+from kivy.properties import ObjectProperty,StringProperty
 
 # needs gps_improvements branch to get location accuracy reports
-from plyer import gps
+# see https://github.com/lipi/plyer/tree/gps_improvements
+try:
+    from plyer import gps
+except ImportError:
+    print 'GPS module is not available'
 
-class LocationService(object):
+from klppr.location import Location
+
+class LocationService(EventDispatcher):
     """
-    Send location updates 
-    Works over OSC.
+    Receive location updates.
+    Store location as property, to allow registering callbacks.
     """
 
-    def __init__(self, tx_port):
+    gps_location = ObjectProperty()
+    gps_status = StringProperty()
 
-        # initialize GPS
-        self.gps = gps
-        
+    def __init__(self):
         try:
+            # initialize GPS
+            self.gps = gps
             self.gps.configure(on_location=self.on_location,
-                    on_status=self.on_status)
+                               on_status=self.on_status)
             self.gps.start()
-            
         except NotImplementedError:
-            import traceback
-            traceback.print_exc()
             self.gps_status = 'GPS is not implemented for your platform'
-            print self.gps_status
-
-        # using OSC as Android doesn't support POSIX-style IPC
-        osc.init()
-        self.tx_port = tx_port
+            Logger.debug(self.gps_status)
 
     def on_location(self, **kwargs):
         # TODO: duplicate calls -- check providers in plyer/android/gps
-        osc.sendMsg('/location', [pickle.dumps(kwargs), ],
-                    port=self.tx_port)
+        self.gps_location = Location(kwargs['lat'],
+                                     kwargs['lon'],
+                                     kwargs['altitude'])
+        Logger.debug('location: %s' % self.gps_location)
 
     def on_status(self, stype, status):
         self.gps_status = 'type={}\n{}'.format(stype, status)
-        print self.gps_status
+        Logger.debug(self.gps_status)
+
+
+class LocationServiceOsc(LocationService):
+    """
+    LocationService with OSC interface
+    """
+    def __init__(self, connector, **kwargs):
+        super(LocationServiceOsc, self).__init__(**kwargs)
+        self.connector = connector
+
+    def on_location(self, **kwargs):
+        super(LocationServiceOsc, self).on_location(**kwargs)
+        self.connector.send('/location', [pickle.dumps(kwargs), ])

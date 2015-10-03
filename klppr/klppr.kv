@@ -14,10 +14,10 @@
             rows: 4
             Label:
                 id: location_label
-                text: root.latlon
+                text: root.current_location
             Label:
                 id: accuracy_label
-                text: root.accuracy
+                text: root.current_accuracy
             Label:
                 text: root.camera_location
             Button:
@@ -36,14 +36,13 @@
                     root.manager.transition.direction = 'left'
                     root.manager.current = 'calib'
 
-<CalibScreen>:
+
+<CameraScreen>:
     image: image
-    pos_label: pos_label
     status_label: status_label
 
     BoxLayout:
         orientation: 'vertical'
-
 
         RelativeLayout:
             size_hint: 1,.4
@@ -59,8 +58,6 @@
                 id: image
                 size: (0,0) # to avoid white square at startup
             Label:
-                id: pos_label
-            Label:
                 id: status_label
                 text: 'Waiting for camera...'
 
@@ -73,21 +70,21 @@
             Label:
             Button:
                 text: 'up'
-                on_press: root.tilt += root.tilt_speed
+                on_press: root.connector.send('/up')
             Label:
             Label:
             Button:
                 text: 'zoom in'
-                on_press: root.zoom += root.zoom_speed
+                on_press: root.connector.send('/zoom_in')
 
             # second row
             Button:
                 text: 'left'
-                on_press: root.pan -= root.pan_speed
+                on_press: root.connector.send('/left')
             Label:
             Button:
                 text: 'right'
-                on_press: root.pan += root.pan_speed
+                on_press: root.connector.send('/right')
             Label:
             Label:
 
@@ -95,12 +92,12 @@
             Label:
             Button:
                 text: 'down'
-                on_press: root.tilt -= root.tilt_speed
+                on_press: root.connector.send('/down')
             Label:
             Label:
             Button:
                 text: 'zoom out'
-                on_press: root.zoom -= root.zoom_speed
+                on_press: root.connector.send('/zoom_out')
 
         GridLayout:
             size_hint: 1,.2

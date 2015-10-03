@@ -4,29 +4,35 @@
 # 
 
 import kivy
-from screen import CalibScreen, GpsScreen, RecordScreen
-
 kivy.require('1.8.0') # replace with your current kivy version !
 
 from kivy.app import App
+from screen import CameraScreen, GpsScreen, RecordScreen
 from kivy.lib import osc
-from kivy.clock import Clock
 from kivy.utils import platform
 from kivy.uix.screenmanager import ScreenManager
 
+from connector import OscConnector
 
 rx_port = 3002
 tx_port = 3000
 
-def send(msg):
-    osc.sendMsg(msg, port=tx_port)
 
 class KlpprApp(App):
 
+    connector = None
+    gps_screen = None
+    calib_screen = None
+    record_screen = None
+    service = None
+
     def build(self):
-        self.gps_screen = GpsScreen(name='gps')
-        self.calib_screen = CalibScreen(name='calib')
-        self.record_screen = RecordScreen(name='record')
+        # interprocess comms
+        self.connector = OscConnector(rx_port, tx_port)
+
+        self.gps_screen = GpsScreen(self.connector, name='gps')
+        self.calib_screen = CameraScreen(self.connector, name='calib')
+        self.record_screen = RecordScreen(self.connector, name='record')
 
         # create the screen manager
         sm = ScreenManager()
@@ -34,16 +40,7 @@ class KlpprApp(App):
         sm.add_widget(self.calib_screen)
         sm.add_widget(self.record_screen)
 
-        # interprocess comms
-        osc.init()
-        oscid = osc.listen(port=rx_port)
-        osc.bind(oscid, self.calib_screen.receive_jpg, '/jpg')
-        osc.bind(oscid, self.calib_screen.receive_ptz, '/ptz')
-        osc.bind(oscid, self.gps_screen.receive_location, '/location')
-        Clock.schedule_interval(lambda *x: osc.readQueue(oscid), 0)
-
         # start service (Android only)
-        self.service = None
         self.start_service()
 
         return sm
@@ -61,22 +58,22 @@ class KlpprApp(App):
             self.service = None
 
     def on_start(self):
-        send('/start_preview')
-        send('/get_ptz')
+        self.connector.send('/start_preview')
+        self.connector.send('/get_ptz')
         pass
 
     def on_pause(self):
         # avoid unnecessary traffic (image download)
-        send('/stop_preview')
+        self.connector.send('/stop_preview')
         return True # avoid on_stop being called
 
     def on_resume(self):
-        send('/start_preview')
+        self.connector.send('/start_preview')
         pass
     
     def on_stop(self):
-        send('/logout')
-        osc.dontListen()
+        self.connector.send('/logout')
+        self.connector.stop()
         return
 
 if __name__ == '__main__':
