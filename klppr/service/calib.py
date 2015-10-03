@@ -18,23 +18,24 @@ class CalibrationService(object):
         self.camera_service = camera_service
         self.calibrator = Calibrator()
 
-    def at_camera(self):
+    def at_camera(self, *args):
         self.calibrator.location = self.location_service.gps_location
 
-    def at_subject(self):
+    def at_subject(self, *args):
         subject_location = self.location_service.gps_location
+        camera_location = self.calibrator.location
         camera_ptz = self.camera_service.ptz()  # TODO: change it to property, too
-        correction = self.calibrator.calibrate(self.camera_location,
+        correction = self.calibrator.calibrate(camera_location,
                                                subject_location,
                                                camera_ptz)
-        Logger.info(correction)
+        Logger.info('correction:{}'.format(correction))
         # TODO: notify tracker when calibration changes
 
 
 class CalibrationServiceOsc(CalibrationService):
 
-    def __init__(self, connector, **kwargs):
-        super(CalibrationServiceOsc, self).__init__(**kwargs)
+    def __init__(self, connector, *args, **kwargs):
+        super(CalibrationServiceOsc, self).__init__(*args, **kwargs)
         self.connector = connector
         self.connector.connect(self.at_camera, '/at_camera')
         self.connector.connect(self.at_subject, '/at_subject')
@@ -81,9 +82,12 @@ class Calibrator(object):
         config = self._config
         if not config.has_section('location'):
             config.add_section('location')
-        config.set('location', 'latitude', str(x.lat))
-        config.set('location', 'longitude', str(x.lon))
-        config.set('location', 'altitude', str(x.alt))
+        try:
+            config.set('location', 'latitude', str(x.lat))
+            config.set('location', 'longitude', str(x.lon))
+            config.set('location', 'altitude', str(x.alt))
+        except AttributeError as err:
+            Logger.error('Invalid location: {}'.format(err))
         self._save_calibration()
 
     @property
@@ -147,13 +151,17 @@ class Calibrator(object):
         >>> c.calibrate(camera, subject, ptz)
         (35.0, 0.0, 1)
         """
-        pan = bearing(camera, subject) - ptz.pan
-        tilt = elevation(camera, subject) - ptz.tilt
-        zoom = ptz.zoom / distance(camera, subject)
-        pan = round(pan, 2)
-        tilt = round(tilt, 2)
-        zoom = round(zoom, 2)
-        self.correction = PTZ(pan, tilt, zoom)
+        try:
+            pan = bearing(camera, subject) - ptz.pan
+            tilt = elevation(camera, subject) - ptz.tilt
+            zoom = ptz.zoom / distance(camera, subject)
+            pan = round(pan, 2)
+            tilt = round(tilt, 2)
+            zoom = round(zoom, 2)
+            self.correction = PTZ(pan, tilt, zoom)
+        except AttributeError as err:
+            Logger.error('Invalid parameter: {}'.format(err))
+            self.correction = PTZ(0,0,1)
         return self.correction
 
 if __name__ == "__main__":

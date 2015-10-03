@@ -13,7 +13,7 @@ from driver import jvc
 from driver.camera import AsyncCamera
 from camera import CameraServiceOsc
 from location import LocationServiceOsc
-#from calib import CalibrationService
+from calib import CalibrationServiceOsc
 from tracker import Tracker
 
 
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     # receive camera commands from UI or tracker
     cam_service = CameraServiceOsc(camera=camera_driver, connector=connector)
 
-    #cal_service = CalibrationService()
+    cal_service = CalibrationServiceOsc(connector, loc_service, cam_service)
 
     # receive location and calibration updates, send camera commands
     tracker = Tracker(loc_service, None, cam_service)
