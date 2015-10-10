@@ -1,9 +1,8 @@
 
-import pickle
 from kivy.event import EventDispatcher
-
 from kivy.logger import Logger
-from kivy.properties import ObjectProperty,StringProperty
+from kivy.properties import ObjectProperty,StringProperty,NumericProperty
+
 
 # needs gps_improvements branch to get location accuracy reports
 # see https://github.com/lipi/plyer/tree/gps_improvements
@@ -12,7 +11,8 @@ try:
 except ImportError:
     print 'GPS module is not available'
 
-from klppr.location import Location
+from loc import Location
+
 
 class LocationService(EventDispatcher):
     """
@@ -21,6 +21,7 @@ class LocationService(EventDispatcher):
     """
 
     gps_location = ObjectProperty()
+    gps_accuracy = NumericProperty()
     gps_status = StringProperty()
 
     def __init__(self):
@@ -39,6 +40,7 @@ class LocationService(EventDispatcher):
         self.gps_location = Location(kwargs['lat'],
                                      kwargs['lon'],
                                      kwargs['altitude'])
+        self.gps_accuracy = kwargs['accuracy']
         Logger.debug('location: %s' % self.gps_location)
 
     def on_status(self, stype, status):
@@ -56,4 +58,6 @@ class LocationServiceOsc(LocationService):
 
     def on_location(self, **kwargs):
         super(LocationServiceOsc, self).on_location(**kwargs)
-        self.connector.send('/location', [pickle.dumps(kwargs), ])
+        loc = self.gps_location
+        self.connector.send('/location', (loc.lat, loc.lon, loc.alt))
+        self.connector.send('/accuracy', self.gps_accuracy)

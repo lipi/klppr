@@ -1,6 +1,6 @@
-
 from math import sqrt, sin, cos, asin, atan, atan2, radians, degrees
-from klppr.limit import *
+
+from limit import *
 
 AVG_EARTH_RADIUS_KM = 6371.0
 

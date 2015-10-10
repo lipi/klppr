@@ -4,15 +4,12 @@ from StringIO import StringIO
 import pickle
 
 import kivy
-
 kivy.require('1.8.0')  # replace with your current kivy version !
-
 from kivy.graphics.texture import Texture
 from kivy.properties import ObjectProperty, BooleanProperty
 from kivy.properties import StringProperty
 from kivy.logger import Logger
 from kivy.uix.screenmanager import Screen
-
 
 class GpsScreen(Screen):
     """
@@ -31,20 +28,19 @@ class GpsScreen(Screen):
         super(GpsScreen, self).__init__(**kwargs)
         self.connector = connector
         self.connector.connect(self.receive_location, '/location')
+        self.connector.connect(self.receive_accuracy, '/accuracy')
 
     def receive_location(self, message, *args):
         """
         Update our pan/tilt/zoom values based on camera's
         """
         location = pickle.loads(message[2])
-        Logger.info('location: %s' % location)
-        self.current_location = "%f\n%f\n%.1f" % (location['lat'],
-                                                  location['lon'],
-                                                  location['altitude'])
-        try:
-            self.current_accuracy = "%.1f" % location['accuracy']
-        except KeyError:
-            Logger.error("accuracy not available")
+        Logger.info('location: %d,%d,%d' % location)
+        self.current_location = "%f\n%f\n%.1f" % location
+
+    def receive_accuracy(self, message, *args):
+        accuracy = pickle.loads(message[2])
+        self.current_accuracy = "%.1f" % accuracy
 
     def on_camera_button(self):
         self.camera_location = self.current_location
@@ -176,6 +172,7 @@ class RecordScreen(Screen):
     def __init__(self, connector, **kwargs):
         super(RecordScreen, self).__init__(**kwargs)
         self.connector = connector
+        self.connector.connect(self.receive_accuracy, '/accuracy')
 
     def on_stop(self):
         self.connector.send('/stop_recording')
@@ -193,9 +190,6 @@ class RecordScreen(Screen):
         # TODO: display network latency
         pass
 
-    def receive_location(self,  message, *args):
-        location = pickle.loads(message[2])
-        try:
-            self.gps_accuracy = '%s m' % location['accuracy']
-        except KeyError:
-            Logger.error("accuracy not available")
+    def receive_accuracy(self, message, *args):
+        accuracy = pickle.loads(message[2])
+        self.gps_accuracy = "%.1f m" % accuracy

@@ -8,11 +8,10 @@ kivy.require('1.8.0') # replace with your current kivy version !
 
 from kivy.app import App
 from screen import CameraScreen, GpsScreen, RecordScreen
-from kivy.lib import osc
 from kivy.utils import platform
 from kivy.uix.screenmanager import ScreenManager
 
-from connector import OscConnector
+from service.connector import OscConnector
 
 rx_port = 3002
 tx_port = 3000

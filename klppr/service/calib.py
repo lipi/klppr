@@ -1,11 +1,11 @@
-
 import ConfigParser
+
 from ConfigParser import NoOptionError, NoSectionError
 
 from kivy.logger import Logger
 
-from klppr.location import *
-from klppr.ptz import PTZ
+from loc import *
+from ptz import PTZ
 
 CALIBRATION_FILE = 'calib.cfg'
 

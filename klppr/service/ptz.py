@@ -3,7 +3,7 @@
 Pan-Tilt-Zoom value handling
 """
 
-from klppr.limit import *
+from limit import *
 
 
 def limit_zoom(x):

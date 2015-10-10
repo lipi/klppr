@@ -8,7 +8,7 @@ import time
 
 from kivy.lib import osc
 
-from klppr.connector import OscConnector
+from connector import OscConnector
 from driver import jvc
 from driver.camera import AsyncCamera
 from camera import CameraServiceOsc
