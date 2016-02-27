@@ -1,10 +1,10 @@
 
-Building for PC is not required, just run src/
+To build a P4A distribution:
 
-Build a P4A distribution called klppr:
+p4a create --dist_name=klppr --bootstrap=pygame \
+--requirements=requests,plyer,kivy,jpeg,png,pil
 
-      cd ~/git/python-for-android
-      ./distribute.sh -m "pil requests kivy" -d klppr
+To build an APK using the above built distribution:
 
-However if the requirements line in buildozer.spec contains the
-external modules they will be automatically downloaded. 
+p4a apk --name klppr --dist_name klppr --private ./klppr \
+--package com.klppr --version 0.0.1 

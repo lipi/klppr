@@ -1,4 +1,8 @@
-.*\.pyc
-.*~
-.buildozer
+syntax: glob
+*.pyo
+*.pyc
+*~
+*.orig
+*.apk
+.idea/
 bin/
