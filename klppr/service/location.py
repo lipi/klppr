@@ -40,7 +40,10 @@ class LocationService(EventDispatcher):
         self.gps_location = Location(kwargs['lat'],
                                      kwargs['lon'],
                                      kwargs['altitude'])
-        self.gps_accuracy = kwargs['accuracy']
+        try:
+            self.gps_accuracy = kwargs['accuracy']
+        except KeyError:
+            self.gps_accuracy = 0
         Logger.debug('location: %s' % self.gps_location)
 
     def on_status(self, stype, status):
