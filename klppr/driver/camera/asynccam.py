@@ -1,9 +1,11 @@
 #!/usr/bin/python
 
-from Queue import Queue, Empty
+from Queue import Queue
 from threading import Thread
 from time import sleep
 import logging
+
+from ptzcam import PtzCamera
 
 '''Asynchronous camera controller
 
@@ -12,7 +14,7 @@ thread.
 
 This allows control methods return immediately, without waiting
 for the response from the camera, which may take several hundred
-milliseconds.
+milliseconds (in case of remote camera).
 
 On creation it connects to the camera, logs in and:
  - keeps kicking it to maintain the session,
@@ -21,10 +23,12 @@ On creation it connects to the camera, logs in and:
 '''
 
 
-class AsyncCamera:
+class AsyncCamera(PtzCamera):
 
-    def __init__(self, driver):
+    def __init__(self, driver, **kwargs):
         self._driver = driver
+        # let PtzCamera's constructor to use the rest of the args
+        super(AsyncCamera, self).__init__(**kwargs)
 
         # NOTE: command queue is not necessary anymore, PTZ commands
         # create a new thread, login/out could do the same
@@ -34,11 +38,11 @@ class AsyncCamera:
         self._cmd_thread.start()
 
         self._cmd_queue.put((self._driver.login, None))
-        self._cmd_queue.join() # will block creator
+        self._cmd_queue.join()  # will block creator
         try:
-            self._pan,self._tilt,self._zoom = self._driver.getptz()
-        except:
-            self._pan,self._tilt,self._zoom = 0,0,0
+            self._pan, self._tilt, self._zoom = self._driver.getptz()
+        except TypeError:
+            self._pan, self._tilt, self._zoom = 0, 0, 0
  
         self._kick_thread = Thread(target=self._kick_fn)
         self._kick_thread.daemon = True
@@ -50,12 +54,16 @@ class AsyncCamera:
         self._preview_thread.daemon = True
         self._preview_thread.start()
 
+    def ptz(self, pan, tilt, zoom):
+        super(AsyncCamera, self).ptz(pan, tilt, zoom)
+        self.pantilt(pan, tilt)
+        self.zoom(zoom)
 
     def _control_fn(self):
-        '''Receives commands through queue and executes them in sequence'''
+        """Receives commands through queue and executes them in sequence"""
         while True:
             # TODO: use variable number of arguments
-            fn,args = self._cmd_queue.get()
+            fn, args = self._cmd_queue.get()
             if args is None:
                 fn()
             else:
@@ -63,17 +71,17 @@ class AsyncCamera:
             self._cmd_queue.task_done()
 
     def _kick_fn(self):
-        '''Keeps kicking the camera to keep session alive'''
+        """Keeps kicking the camera to keep session alive"""
         while True:
             sleep(10)
-            if True != self._driver.kick():
+            if not self._driver.kick():
                 self._driver.logout()
                 self._driver.login()                
 
     def _preview_fn(self):
-        '''Keeps fetching preview images.
+        """Keeps fetching preview images.
 
-        Fetches JPEG images one-by-one, as fast as possible.'''
+        Fetches JPEG images one-by-one, as fast as possible."""
         while True:
             if not self._is_previewing:
                 # reduce CPU load by avoiding busy looping
@@ -90,32 +98,27 @@ class AsyncCamera:
         self._cmd_queue.join()
 
     def pantilt(self, pan=0, tilt=0):
-        '''Pan and tilt camera to the given angles (degrees)'''
-        self._pan,self._tilt = pan,tilt
+        """Pan and tilt camera to the given angles (degrees)"""
+        self._pan, self._tilt = pan, tilt
         # Create a thread for the potentially long-running command.
         # This means commands can run parallel (out-of-order).
         # If this is not desirable (not sure?) use the command queue.
         Thread(target=self._driver.pantilt, args=(pan, tilt)).start()
         
     def zoom(self, zoom=10, speed=1):
-        '''Set zoom level using given speed'''
+        """Set zoom level using given speed"""
         self._zoom = zoom
         # Create a thread for the potentially long-running command.
         # This means commands can run parallel (out-of-order).
         # If this is not desirable (not sure?) use the command queue.
-        Thread(target=self._driver.zoom, args=(zoom,speed)).start()
+        Thread(target=self._driver.zoom, args=(zoom, speed)).start()
 
     def getjpg(self):
-        '''
-        Return the most recent image received by the preview thread.
-        '''
+        """Return the most recent image received by preview thread."""
         jpg = None
         while not self._jpg_queue.empty():
             jpg = self._jpg_queue.get()
         return jpg
-
-    def ptz(self):
-        return self._pan, self._tilt, self._zoom
 
     def start_preview(self):
         self._is_previewing = True

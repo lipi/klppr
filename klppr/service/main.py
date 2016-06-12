@@ -6,16 +6,15 @@
 import ConfigParser
 import time
 
+from driver.asynccam import AsyncCamera
 from kivy.lib import osc
 
-from connector import OscConnector
-from driver import jvc
-from driver.camera import AsyncCamera
-from camera import CameraServiceOsc
-from location import LocationServiceOsc
 from calib import CalibrationServiceOsc
-from tracker import Tracker
-
+from camera import CameraServiceOsc
+from connector import OscConnector
+from klppr.driver.camera import jvc
+from klppr.tracker import Tracker
+from location import LocationServiceOsc
 
 if __name__ == '__main__':
 

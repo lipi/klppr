@@ -11,7 +11,7 @@ try:
 except ImportError:
     print 'GPS module is not available'
 
-from loc import Location
+from klppr.location import Location
 
 
 class LocationService(EventDispatcher):

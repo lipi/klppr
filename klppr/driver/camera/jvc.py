@@ -3,38 +3,43 @@
 # JVC GV-LS2 camera control
 #
 
+# standard libraries
 import sys
 import json
 import time
 import logging
-logging.basicConfig(level=logging.DEBUG)
 
+# 3rd party libraries
 import requests
 from requests.auth import HTTPDigestAuth
 from requests.adapters import HTTPAdapter
-
 from PIL import Image
 from StringIO import StringIO
 
+logging.basicConfig(level=logging.DEBUG)
+
+
 def timestamp():
-    '''Return number of milliseconds since Epoch'''
+    """Return number of milliseconds since Epoch"""
     return int(time.time() * 1000)
 
-def add_timestamp(url):
-    '''Append timestamp to URL
 
-    Could be used to determine latency'''
-    if ('cgi' in url):
+def add_timestamp(url):
+    """Append timestamp to URL
+
+    Could be used to determine latency"""
+    if 'cgi' in url:
         if '?' in url:
             url += '&{}'.format(timestamp())
         else:
             url += '?{}'.format(timestamp())
     return url
 
+
 class JVC:
     
     def __init__(self, host='192.168.1.1', user='root', password='password'):
-        self.host=host
+        self.host = host
         self.session = requests.session()
         self.session.auth = HTTPDigestAuth(user, password)
         self.url = 'http://%s' % self.host
@@ -43,16 +48,19 @@ class JVC:
                                                  pool_maxsize=100))
         self.cookies = self.session.cookies
 
+        # initialized here to silence PyCharm warnings
+        self.control_timeout = None
+        self.get_timeout = None
+        self.kick_timeout = None
         self.init_timeouts()
 
-
     def init_timeouts(self):
-        '''
+        """
         Initialize connection and read timout values for HTTP requests
 
         Timeouts are a result of trial-and-error on a wifi network and
         GSM-to-ADSL connection.
-        '''
+        """
 
         # For further reading see
         # http://www.stevesouders.com/blog/2011/09/21/making-a-mobile-connection/
@@ -60,17 +68,16 @@ class JVC:
         # normally (both GSM and wifi) but jump up to 2-3 secs of
         # response time after some inactivity, so choosing 5
         # seconds for connection timeout
-        self.control_timeout = (5,3)
-        self.get_timeout = (3,1)
-        self.kick_timeout = (10,5)
-
+        self.control_timeout = (5, 3)
+        self.get_timeout = (3, 1)
+        self.kick_timeout = (10, 5)
 
     def _get(self, uri='/', **kwargs):
 
-        '''
+        """
         GET the relative path (URI) and return the response.
         May throw exception.
-        '''
+        """
         url = self.url + uri
         url = add_timestamp(url)
         response = self.session.get(url, **kwargs)
@@ -79,10 +86,10 @@ class JVC:
         return response
 
     def _post(self, uri, data, **kwargs):
-        '''
+        """
         POST data to the relative path (URI) and return the response.
         May throw exception.
-        '''
+        """
         url = self.url + uri
         url = add_timestamp(url)
         logging.debug('POST {0} {1}'.format(url, data))
@@ -104,7 +111,7 @@ class JVC:
             if r.reason == 'OK':
                 # not sure if needed
                 r = self._get('/cgi-bin/resource_release.cgi?param=mjpeg',
-                      timeout=timeout)
+                              timeout=timeout)
             if r.reason == 'OK':
                 success = True
         except Exception as ex:
@@ -113,7 +120,7 @@ class JVC:
         return success
 
     def kick(self):
-        '''Keep opening new sessions same as the web app does'''
+        """Keep opening new sessions same as the web app does"""
         timeout = self.kick_timeout
         try:
             r1 = self._get('/php/session_continue.php', timeout=timeout)
@@ -132,62 +139,60 @@ class JVC:
 
     def logout(self):
         try:
-            r = self._get('/php/session_finish.php')
+            self._get('/php/session_finish.php')
         except Exception as ex:
             logging.info('logout: {0}'.format(ex))
         logging.info('logout')
 
     def pantilt(self, pan=0, tilt=0):
-        cmd = {"Cmd":0,"Pan":pan,"Tilt":tilt}
-        payload = {"Command":"SetPTCtrl",
-                              "Params": cmd}
+        cmd = {"Cmd": 0, "Pan": pan, "Tilt": tilt}
+        payload = {"Command": "SetPTCtrl", "Params": cmd}
         try:
-            r = self._post('/cgi-bin/cmd.cgi',
-                           data = json.dumps(payload),
-                           timeout = self.control_timeout)
+            self._post('/cgi-bin/cmd.cgi',
+                       data=json.dumps(payload),
+                       timeout=self.control_timeout)
         except Exception as ex:
             logging.debug('pantilt: {0}'.format(ex))
 
     def zoom(self, zoom=10, speed=1):
-        cmd = {"DeciZoomPosition":zoom, "Speed":speed}
-        payload = {"Command": "SetZoomPosition", "Params":cmd }
+        cmd = {"DeciZoomPosition": zoom, "Speed": speed}
+        payload = {"Command": "SetZoomPosition", "Params": cmd}
         try:
-            r = self._post('/cgi-bin/cmd.cgi',
-                           data = json.dumps(payload),
-                           timeout = self.control_timeout)
+            self._post('/cgi-bin/cmd.cgi',
+                       data=json.dumps(payload),
+                       timeout=self.control_timeout)
         except Exception as ex:
             logging.debug('zoom: {0}'.format(ex))
 
     def getptz(self):
-        r = self._get('/cgi-bin/ptz_position.cgi',
-                      timeout = self.get_timeout)
-        if r.ok:
-            j = r.json()
+        result = None
+        response = self._get('/cgi-bin/ptz_position.cgi',
+                             timeout=self.get_timeout)
+        if response.ok:
+            j = response.json()
             data = j['Data']
             pan = data['PanPosition']
             tilt = data['TiltPosition']
             zoom = data['DeciZoomPosition']
-            result = (pan,tilt,zoom)
-        else:
-            result = r
+            result = (pan, tilt, zoom)
         return result
 
     def getstatus(self):
         try:
             r = self._get('/cgi-bin/camera_status.cgi')
+            j = r.json()
+            logging.debug('{0}'.format(j['Data']['SdcardRemains']))
         except Exception as ex:
             logging.debug('getstatus: {0}'.format(ex))
-        j = r.json()
-        logging.debug('{0}'.format(j['Data']['SdcardRemains']))
+
         return
 
     def getjpg(self):
-        '''Return JPEG image data received from camera or None.'''
+        """Return JPEG image data received from camera or None."""
         jpg = None
         try:
             response = self._get('/cgi-bin/get_jpg.cgi',
                                  timeout=self.get_timeout)
-            #img = Image.open(StringIO(response.content))
             jpg = response.content
         except Exception as ex:
             logging.debug('getjpg: {0}'.format(ex))
@@ -195,19 +200,14 @@ class JVC:
         return jpg
 
     def getimg(self):
-        '''Fetch JPEG data from camera and convert it to PIL image.
-        Flip image vertically. Return None if no data.'''
+        """Fetch JPEG data from camera and convert it to PIL image.
+        Flip image vertically. Return None if no data."""
         jpg = self.getjpg()
+        img = None
         if jpg is not None:
             img = Image.open(StringIO(jpg))
             img = img.transpose(Image.FLIP_TOP_BOTTOM)
         return img
-
-    def savejpg(self, img, filename='x.jpg'):
-        try:
-            img.save(filename)
-        except IOError as ex:
-            logging.debug('savejpg: {0}'.format(ex))
 
     def _recording(self, ctrl):
         payload = {"Command": "SetCamCtrl", "Params": {"Ctrl": ctrl}}
@@ -238,19 +238,20 @@ class JVC:
             sys.stdout.flush()
             self.pantilt((i % 100) - 50, 10)
             img = self.getjpg()
-            self.savejpg(img)
+            if img:
+                img.save('x.jpg')
             time.sleep(1)
 
 if __name__ == '__main__':
 
-    host = '192.168.3.103'
+    hostname = '192.168.3.103'
     if len(sys.argv) > 1:
-        host = sys.argv[1]
+        hostname = sys.argv[1]
 
-    j = JVC(host)
+    jvc = JVC(hostname)
 
     try:
-        j.test(3600 * 10)
+        jvc.test(3600 * 10)
     except KeyboardInterrupt:
-        j.logout()
+        jvc.logout()
 
