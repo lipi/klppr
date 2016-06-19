@@ -28,7 +28,7 @@ class AsyncCamera(PtzCamera):
     def __init__(self, driver, **kwargs):
         self._driver = driver
         # let PtzCamera's constructor to use the rest of the args
-        super(AsyncCamera, self).__init__(**kwargs)
+        super(AsyncCamera, self).__init__(self, **kwargs)
 
         # NOTE: command queue is not necessary anymore, PTZ commands
         # create a new thread, login/out could do the same
@@ -40,7 +40,7 @@ class AsyncCamera(PtzCamera):
         self._cmd_queue.put((self._driver.login, None))
         self._cmd_queue.join()  # will block creator
         try:
-            self._pan, self._tilt, self._zoom = self._driver.getptz()
+            self._pan, self._tilt, self._zoom = self._driver.getptz
         except TypeError:
             self._pan, self._tilt, self._zoom = 0, 0, 0
  

@@ -62,5 +62,5 @@ class LocationServiceOsc(LocationService):
     def on_location(self, **kwargs):
         super(LocationServiceOsc, self).on_location(**kwargs)
         loc = self.gps_location
-        self.connector.send('/location', (loc.lat, loc.lon, loc.alt))
+        self.connector.send('/location', (loc.latitude, loc.longitude, loc.altitude))
         self.connector.send('/accuracy', self.gps_accuracy)

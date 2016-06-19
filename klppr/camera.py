@@ -9,20 +9,25 @@ True heading can be set by calibration.
 It controls a PTZ camera (Pan-Tilt-Zoom). Receives location updates.
 """
 
+import logging
+from pydispatch import dispatcher
 from limit import limit_pan
+from klppr.driver.camera.asynccam import AsyncCamera
 
 
-class Camera(object):
+class Camera(AsyncCamera):
 
-    def __init__(self, ptz_camera, location_provider=None):
+    def __init__(self, location_provider=None, **kwargs):
         """
         :param ptz_camera: pan-tilt-zoom camera
         :param location_provider: service with callbacks
         """
-        self._camera = ptz_camera
+        super(Camera, self).__init__(**kwargs)
         self._location_provider = location_provider
         if location_provider:
-            pass  # TODO: subscribe to location updates
+            dispatcher.connect(receiver=self.on_location_update,
+                               signal='location-update',
+                               sender=location_provider)
         self._true_heading = None
         self._orientation = None
         self._location = None
@@ -43,9 +48,12 @@ class Camera(object):
     def location(self, x):
         self._location = x
 
-    def on_location_update(self):
-        # TODO: update location property
-        pass
+    def on_location_update(self, location):
+        self.location = location
+        logging.debug('camera location: {loc}'.format(loc=location))
+        dispatcher.send(signal='location-update',
+                        location=self.location,
+                        sender=self)
 
     @property
     def orientation(self):
@@ -65,6 +73,6 @@ class Camera(object):
 
         pan = bearing - self.true_heading
         tilt = elevation
-        zoom = self._camera.field_of_view / field_of_view
+        zoom = self.field_of_view / field_of_view
 
-        self._camera.ptz(pan, tilt, zoom)
+        self.ptz(pan, tilt, zoom)

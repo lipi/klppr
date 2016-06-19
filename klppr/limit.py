@@ -39,6 +39,13 @@ def limit_tilt(x):
     # TODO: limit to camera's actual range?
     return clamp(x, -90, 90)
 
+def limit_latitude(x):
+    """
+    Limit latitude
+    :param x:
+    :return:
+    """
+    return limit_tilt(x)
 
 def clamp(x, x_min, x_max):
     """

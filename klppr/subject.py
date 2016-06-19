@@ -1,4 +1,7 @@
 
+import logging
+from pydispatch import dispatcher
+
 
 """
 Camera subject
@@ -18,7 +21,9 @@ class Subject(object):
         """
         self._location_provider = location_provider
         if location_provider:
-            pass  # TODO: register to location updates
+            dispatcher.connect(receiver=self.on_location_update,
+                               signal='location-update',
+                               sender=location_provider)
 
         self._size = size
         self._location = None
@@ -39,7 +44,10 @@ class Subject(object):
     def location(self, x):
         self._location = x
 
-    def on_location_update(self):
-        # TODO: update location property
-        pass
+    def on_location_update(self, location):
+        self.location = location
+        logging.debug('subject location: {loc}'.format(loc=location))
+        dispatcher.send(signal='location-update',
+                        location=self.location,
+                        sender=self)
 

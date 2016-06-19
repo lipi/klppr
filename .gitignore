@@ -4,5 +4,7 @@ syntax: glob
 *~
 *.orig
 *.apk
+camera-location.json
+subject-location.json
 .idea/
 bin/

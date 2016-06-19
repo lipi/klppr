@@ -1,0 +1,6 @@
+requests
+pillow
+pydispatacher
+
+pytest
+jsonpickle

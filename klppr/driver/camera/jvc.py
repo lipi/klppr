@@ -164,17 +164,21 @@ class JVC:
         except Exception as ex:
             logging.debug('zoom: {0}'.format(ex))
 
+    @property
     def getptz(self):
         result = None
-        response = self._get('/cgi-bin/ptz_position.cgi',
-                             timeout=self.get_timeout)
-        if response.ok:
+        try:
+            response = self._get('/cgi-bin/ptz_position.cgi',
+                                 timeout=self.get_timeout)
             j = response.json()
             data = j['Data']
             pan = data['PanPosition']
             tilt = data['TiltPosition']
             zoom = data['DeciZoomPosition']
             result = (pan, tilt, zoom)
+        except requests.exceptions.ConnectTimeout:
+            pass
+
         return result
 
     def getstatus(self):
@@ -234,7 +238,7 @@ class JVC:
         self.login()
         self.zoom(100)
         for i in range(tries):
-            print i, self.getptz()
+            print i, self.getptz
             sys.stdout.flush()
             self.pantilt((i % 100) - 50, 10)
             img = self.getjpg()

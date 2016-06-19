@@ -81,9 +81,9 @@ class Calibrator(object):
         if not config.has_section('location'):
             config.add_section('location')
         try:
-            config.set('location', 'latitude', str(x.lat))
-            config.set('location', 'longitude', str(x.lon))
-            config.set('location', 'altitude', str(x.alt))
+            config.set('location', 'latitude', str(x.latitude))
+            config.set('location', 'longitude', str(x.longitude))
+            config.set('location', 'altitude', str(x.altitude))
         except AttributeError as err:
             Logger.error('Invalid location: {}'.format(err))
         self._save_calibration()

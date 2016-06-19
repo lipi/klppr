@@ -17,7 +17,7 @@ def distance(a, b):
     """
     if not (a.valid() and b.valid()):
         return 0.0
-    latlons = [a.lat, a.lon, b.lat, b.lon]
+    latlons = [a.latitude, a.longitude, b.latitude, b.longitude]
     lat1, lon1, lat2, lon2 = [radians(float(x)) for x in latlons]
     # calculate Haversine
     lat = lat2 - lat1
@@ -33,7 +33,7 @@ def bearing(a, b):
     """
     if not (a.valid() and b.valid()):
         return 0.0
-    latlons = [a.lat, a.lon, b.lat, b.lon]
+    latlons = [a.latitude, a.longitude, b.latitude, b.longitude]
     lat1, lon1, lat2, lon2 = [radians(float(x)) for x in latlons]
 
     alpha = atan2(sin(lon2-lon1)*cos(lat2),
@@ -52,7 +52,7 @@ def elevation(a, b):
     d = distance(a, b)
     if d == 0:
         return 0.0
-    elev = atan((b.alt - a.alt) / d)
+    elev = atan((b.altitude - a.altitude) / d)
     return round(degrees(elev), 3)
 
 
@@ -62,60 +62,60 @@ class Location(object):
     Location with geo location in degrees and altitude in meters.
     """
 
-    def __init__(self, lat=None, lon=None, alt=0):
+    def __init__(self, latitude=None, longitude=None, altitude=0):
         """
         Location object
-        :param lat: latitude in degrees
-        :param lon: longitude in degrees
-        :param alt: altitude above sea level in meters
+        :param latitude: latitude in degrees
+        :param longitude: longitude in degrees
+        :param altitude: altitude above sea level in meters
         """
         # TODO: accuracy
         # TODO: time
         # TODO: (speed, heading, trajectory)
 
         # attributes
-        self._lat = None
-        self._lon = None
-        self._alt = 0.0
+        self._latitude = None
+        self._longitude = None
+        self._altitude = 0.0
         # properties
-        if lat is not None:
-            self.lat = lat
-        if lon is not None:
-            self.lon = lon
-        self.alt = alt
+        if latitude is not None:
+            self.latitude = latitude
+        if longitude is not None:
+            self.longitude = longitude
+        self.altitude = altitude
 
     def valid(self):
         """
         :return: True if location is valid
         """
-        v = ((self.lat is not None) and
-             (self.lon is not None) and
-             (self.alt is not None))
+        v = ((self.latitude is not None) and
+             (self.longitude is not None) and
+             (self.altitude is not None))
         return v
 
     def __repr__(self):
-        return str((self.lat, self.lon, self.alt))
+        return str((self.latitude, self.longitude, self.altitude))
 
     @property
-    def lat(self):
-        return self._lat
+    def latitude(self):
+        return self._latitude
 
-    @lat.setter
-    def lat(self, x):
-        self._lat = limit_tilt(x)
-
-    @property
-    def lon(self):
-        return self._lon
-
-    @lon.setter
-    def lon(self, x):
-        self._lon = limit_pan(x)
+    @latitude.setter
+    def latitude(self, x):
+        self._latitude = limit_latitude(x)
 
     @property
-    def alt(self):
-        return self._alt
+    def longitude(self):
+        return self._longitude
 
-    @alt.setter
-    def alt(self, x):
-        self._alt = x
+    @longitude.setter
+    def longitude(self, x):
+        self._longitude = limit_longitude(x)
+
+    @property
+    def altitude(self):
+        return self._altitude
+
+    @altitude.setter
+    def altitude(self, x):
+        self._altitude = x
