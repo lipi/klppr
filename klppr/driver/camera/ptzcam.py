@@ -9,7 +9,7 @@ Pan/tilt/zoom values can be set.
 
 class PtzCamera(object):
 
-    def __init__(self, field_of_view):
+    def __init__(self, field_of_view=180.0):
         """
         :param field_of_view: field-of-view at zoom=1, in degrees
         """

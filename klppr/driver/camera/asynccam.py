@@ -25,10 +25,10 @@ On creation it connects to the camera, logs in and:
 
 class AsyncCamera(PtzCamera):
 
-    def __init__(self, driver, **kwargs):
+    def __init__(self, driver=None, **kwargs):
         self._driver = driver
         # let PtzCamera's constructor to use the rest of the args
-        super(AsyncCamera, self).__init__(self, **kwargs)
+        super(AsyncCamera, self).__init__(**kwargs)
 
         # NOTE: command queue is not necessary anymore, PTZ commands
         # create a new thread, login/out could do the same

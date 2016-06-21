@@ -20,6 +20,10 @@ def limit_pan(x):
     return ((x + 180) % 360) - 180
 
 
+def limit_longitude(x):
+    return limit_pan(x)
+
+
 def limit_tilt(x):
     """
     Limit tilt to -90..90 range, without wrap-around

@@ -15,6 +15,8 @@ def distance(a, b):
     """
     Return distance in meters between Locations a and b
     """
+    if not a or not b:
+        return 0.0
     if not (a.valid() and b.valid()):
         return 0.0
     latlons = [a.latitude, a.longitude, b.latitude, b.longitude]
@@ -27,10 +29,22 @@ def distance(a, b):
     return dist
 
 
+def distance3d(a, b):
+    if not a or not b:
+        return 0.0
+    if not (a.valid() and b.valid()):
+        return 0.0
+    d = distance(a, b)
+    h = b.altitude - a.altitude
+    return sqrt(d*d + h*h)
+
+
 def bearing(a, b):
     """
     Return bearing in degrees between Locations a and b (from a to b)
     """
+    if not a or not b:
+        return 0.0
     if not (a.valid() and b.valid()):
         return 0.0
     latlons = [a.latitude, a.longitude, b.latitude, b.longitude]
@@ -47,6 +61,8 @@ def elevation(a, b):
     """
     Return elevation in degrees between Locations a and b (from a to b)
     """
+    if not a or not b:
+        return 0.0
     if not (a.valid() and b.valid()):
         return 0.0
     d = distance(a, b)

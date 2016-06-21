@@ -56,7 +56,7 @@ class JVC:
 
     def init_timeouts(self):
         """
-        Initialize connection and read timout values for HTTP requests
+        Initialize connection and read timeout values for HTTP requests
 
         Timeouts are a result of trial-and-error on a wifi network and
         GSM-to-ADSL connection.
@@ -258,4 +258,3 @@ if __name__ == '__main__':
         jvc.test(3600 * 10)
     except KeyboardInterrupt:
         jvc.logout()
-

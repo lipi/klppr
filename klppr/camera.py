@@ -28,8 +28,8 @@ class Camera(AsyncCamera):
             dispatcher.connect(receiver=self.on_location_update,
                                signal='location-update',
                                sender=location_provider)
-        self._true_heading = None
-        self._orientation = None
+        self._true_heading = .0
+        self._orientation = (.0, .0, 180.)
         self._location = None
 
     @property
@@ -60,7 +60,7 @@ class Camera(AsyncCamera):
         return self._orientation
 
     @orientation.setter
-    def orientation(self, bearing, elevation, field_of_view):
+    def orientation(self, x):
         """
         Set the actual camera pan/tilt/zoom values based on
         the required bearing/elevation/field-of-view
@@ -69,6 +69,7 @@ class Camera(AsyncCamera):
         :param elevation: elevation to the subject, degrees
         :param field_of_view: required field-of-view, degrees
         """
+        bearing, elevation, field_of_view = x
         self._orientation = bearing, elevation, field_of_view
 
         pan = bearing - self.true_heading

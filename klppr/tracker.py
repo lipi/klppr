@@ -48,7 +48,7 @@ class Tracker(object):
         Re-calculates camera orientation and controls camera
         """
         bearing, elevation, fov = self.track()
-        self._camera.orentation = bearing, elevation, fov
+        self._camera.orientation = bearing, elevation, fov
 
     def track(self):
         """
@@ -64,9 +64,9 @@ class Tracker(object):
 
         bearing = location.bearing(camera, subject)
         elevation = location.elevation(camera, subject)
-        distance = location.distance(camera, subject)
+        distance = location.distance3d(camera, subject)
         fov = field_of_view(self._subject.size, distance)
         logging.debug('distance:{0} bearing:{1} elevation:{2} FOV:{3}'
-                     .format(distance, bearing, elevation, fov))
+                      .format(distance, bearing, elevation, fov))
 
         return bearing, elevation, fov
