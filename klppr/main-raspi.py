@@ -10,6 +10,10 @@ from klppr.tracker import Tracker
 
 if __name__ == '__main__':
 
+    import logging.config
+    logging.config.fileConfig('logging.conf',
+                              disable_existing_loggers=False)
+
     # change camera location via editing camera.json
     camera_location = FakeLocationProvider('camera-location.json')
     driver = JVC()
@@ -27,4 +31,4 @@ if __name__ == '__main__':
     while True:
         camera_location.process()
         subject_location.process()
-        time.sleep(0.5)
+        time.sleep(1.0)

@@ -14,6 +14,8 @@ from pydispatch import dispatcher
 from limit import limit_pan
 from klppr.driver.camera.asynccam import AsyncCamera
 
+logger = logging.getLogger(__name__)
+
 
 class Camera(AsyncCamera):
 
@@ -50,7 +52,7 @@ class Camera(AsyncCamera):
 
     def on_location_update(self, location):
         self.location = location
-        logging.debug('camera location: {loc}'.format(loc=location))
+        logger.debug('camera location: {loc}'.format(loc=location))
         dispatcher.send(signal='location-update',
                         location=self.location,
                         sender=self)

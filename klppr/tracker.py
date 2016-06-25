@@ -16,6 +16,8 @@ from math import atan, degrees
 from pydispatch import dispatcher
 from klppr import location
 
+logger = logging.getLogger(__name__)
+
 
 def field_of_view(size, distance):
     """
@@ -66,7 +68,8 @@ class Tracker(object):
         elevation = location.elevation(camera, subject)
         distance = location.distance3d(camera, subject)
         fov = field_of_view(self._subject.size, distance)
-        logging.debug('distance:{0} bearing:{1} elevation:{2} FOV:{3}'
-                      .format(distance, bearing, elevation, fov))
+
+        msg = 'distance:{0:.3f} bearing:{1:.3f} elevation:{2:.3f} FOV:{3:.3f}'
+        logger.debug(msg.format(distance, bearing, elevation, fov))
 
         return bearing, elevation, fov

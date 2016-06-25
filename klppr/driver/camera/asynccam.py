@@ -22,6 +22,8 @@ On creation it connects to the camera, logs in and:
  - queues up control commands and executes them in order.
 '''
 
+logger = logging.getLogger(__name__)
+
 
 class AsyncCamera(PtzCamera):
 
@@ -90,7 +92,7 @@ class AsyncCamera(PtzCamera):
 
             jpg = self._driver.getjpg()
             if bool(jpg):
-                logging.info('preview: {0} bytes'.format(len(jpg)))
+                logger.info('preview: {0} bytes'.format(len(jpg)))
                 self._jpg_queue.put(jpg)
 
     def close(self):

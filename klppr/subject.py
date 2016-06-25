@@ -11,6 +11,8 @@ It has a location (later trajectory as well)
 and a size (which the camera can fit in the frame).
 """
 
+logger = logging.getLogger(__name__)
+
 
 class Subject(object):
 
@@ -46,7 +48,7 @@ class Subject(object):
 
     def on_location_update(self, location):
         self.location = location
-        logging.debug('subject location: {loc}'.format(loc=location))
+        logger.debug('subject location: {loc}'.format(loc=location))
         dispatcher.send(signal='location-update',
                         location=self.location,
                         sender=self)

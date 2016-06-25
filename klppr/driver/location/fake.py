@@ -7,7 +7,7 @@ from pydispatch import dispatcher
 
 from klppr.location import Location
 
-logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 class FakeLocationProvider(object):
@@ -30,9 +30,9 @@ class FakeLocationProvider(object):
                                 sender=self)
         except IOError:
 
-            logging.error("Can't open {file}".
+            logger.error("Can't open {file}".
                           format(file=self._filename))
         except ValueError:
-            logging.error("Not valid JSON: '{data}'".
+            logger.error("Not valid JSON: '{data}'".
                           format(data=text))
             time.sleep(5)
