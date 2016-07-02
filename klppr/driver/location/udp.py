@@ -14,9 +14,6 @@ logger = logging.getLogger(__name__)
 class UdpHandler(SocketServer.BaseRequestHandler):
 
     def handle(self):
-        # avoid duplicate entries
-        logger.propagate = False
-
         data = self.request[0].strip()
         try:
             json_location = json.loads(data)

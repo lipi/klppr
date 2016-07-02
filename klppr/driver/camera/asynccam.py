@@ -56,9 +56,6 @@ class AsyncCamera(PtzCamera):
         self._preview_thread.daemon = True
         self._preview_thread.start()
 
-        # avoid duplicate entries
-        logger.propagate = False
-
     def ptz(self, pan, tilt, zoom):
         super(AsyncCamera, self).ptz(pan, tilt, zoom)
         self.pantilt(pan, tilt)

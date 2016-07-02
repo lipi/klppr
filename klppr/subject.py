@@ -30,9 +30,6 @@ class Subject(object):
         self._size = size
         self._location = None
 
-        # avoid duplicate entries
-        logger.propagate = False
-
     @property
     def size(self):
         return self._size

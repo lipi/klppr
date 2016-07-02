@@ -54,9 +54,6 @@ class JVC:
         self.kick_timeout = None
         self.init_timeouts()
 
-        # avoid duplicate entries
-        logger.propagate = False
-
     def init_timeouts(self):
         """
         Initialize connection and read timeout values for HTTP requests
