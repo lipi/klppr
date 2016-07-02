@@ -34,6 +34,9 @@ class Camera(AsyncCamera):
         self._orientation = (.0, .0, 180.)
         self._location = None
 
+        # avoid duplicate entries
+        logger.propagate = False
+
     @property
     def true_heading(self):
         return self._true_heading

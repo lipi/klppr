@@ -19,6 +19,9 @@ class FakeLocationProvider(object):
         self._filename = filename
         self.location = Location()
 
+        # avoid duplicate entries
+        logger.propagate = False
+
     def process(self):
         text = ''
         try:

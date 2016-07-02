@@ -43,6 +43,9 @@ class Tracker(object):
                            signal='location-update',
                            sender=subject)
 
+        # avoid duplicate entries
+        logger.propagate = False
+
     def on_location_update(self):
         """
         Called on either camera or subject location update

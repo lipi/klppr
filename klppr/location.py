@@ -1,6 +1,6 @@
 from math import sqrt, sin, cos, asin, atan, atan2, radians, degrees
 
-from klppr.limit import *
+from klppr.limit import limit_latitude, limit_longitude
 
 
 '''
