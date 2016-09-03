@@ -3,6 +3,7 @@ import time
 
 from klppr.driver.camera.jvc import JVC
 from klppr.driver.location.fake import FakeLocationProvider
+from klppr.driver.location.gpsd import GpsdLocationProvider
 from klppr.driver.location.udp import UdpLocationProvider
 from klppr.camera import Camera
 from klppr.subject import Subject
@@ -17,13 +18,14 @@ def run():
 
     # change camera location via editing camera.json
     # camera_location = FakeLocationProvider('camera-location.json')
-    #camera_location = UdpLocationProvider()
-    camera_location = FakeLocationProvider('camera-location.json')
+    # camera_location = UdpLocationProvider()
+    camera_location = GpsdLocationProvider(host='127.0.0.1')
     config = ConfigParser.RawConfigParser()
     config.read('camera.cfg')
     driver = JVC(host=config.get('access', 'hostname'),
                  user=config.get('access', 'username'),
                  password=config.get('access', 'password'))
+    # TODO: stub camera driver
     camera = Camera(driver=driver,
                     location_provider=camera_location)
 

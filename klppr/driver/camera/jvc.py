@@ -81,7 +81,7 @@ class JVC:
         url = self.url + uri
         url = add_timestamp(url)
         response = self.session.get(url, **kwargs)
-        logger.info('elapsed: {0} reason: {1}'.format(response.elapsed,
+        logger.debug('elapsed: {0} reason: {1}'.format(response.elapsed,
                                                       response.reason))
         return response
 
@@ -92,9 +92,9 @@ class JVC:
         """
         url = self.url + uri
         url = add_timestamp(url)
-        logger.debug('POST {0} {1}'.format(url, data))
+        logger.info('POST {0} {1}'.format(url, data))
         response = self.session.post(url, data=data, **kwargs)
-        logger.info('elapsed: {0} reason: {1}'.format(response.elapsed,
+        logger.debug('elapsed: {0} reason: {1}'.format(response.elapsed,
                                                       response.reason))
         return response
                      
@@ -112,8 +112,8 @@ class JVC:
                 # not sure if needed
                 r = self._get('/cgi-bin/resource_release.cgi?param=mjpeg',
                               timeout=timeout)
-            if r.reason == 'OK':
-                success = True
+            if r.reason == 'OK':                success = True
+            logger.info('login OK')
         except Exception as ex:
             logger.debug('{0}'.format(ex))
             logger.info('login failed')

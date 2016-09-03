@@ -15,6 +15,7 @@ class UdpHandler(SocketServer.BaseRequestHandler):
 
     def handle(self):
         data = self.request[0].strip()
+        print('data:{0}'.format(data))
         try:
             json_location = json.loads(data)
             logger.debug('{0} sent {1}'.format(self.client_address[0],
@@ -25,7 +26,7 @@ class UdpHandler(SocketServer.BaseRequestHandler):
                             location=location,
                             sender=self)
         except ValueError:
-            logger.debug('{1} sent incorrect JSON: {2}'.
+            logger.debug('{0} sent incorrect JSON: {1}'.
                          format(self.client_address[0],
                          hexdump(data)))
 

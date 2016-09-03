@@ -1,2 +1,2 @@
-export PYTHONPATH=.
-python klppr/main-raspi.py
+export PYTHONPATH=..
+python main-raspi.py

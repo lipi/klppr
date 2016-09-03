@@ -1,6 +1,9 @@
 requests
 pillow
-pydispatacher
+PyDispatcher
+pyserial
+hexdump
+
 
 pytest
 jsonpickle

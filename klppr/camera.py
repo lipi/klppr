@@ -71,11 +71,12 @@ class Camera(AsyncCamera):
         :param elevation: elevation to the subject, degrees
         :param field_of_view: required field-of-view, degrees
         """
-        bearing, elevation, field_of_view = x
-        self._orientation = bearing, elevation, field_of_view
+        if self._orientation != x:
+            bearing, elevation, field_of_view = x
+            self._orientation = bearing, elevation, field_of_view
 
-        pan = bearing - self.true_heading
-        tilt = elevation
-        zoom = self.field_of_view / field_of_view
+            pan = bearing - self.true_heading
+            tilt = elevation
+            zoom = self.field_of_view / field_of_view
 
-        self.ptz(pan, tilt, zoom)
+            self.ptz(pan, tilt, zoom)
