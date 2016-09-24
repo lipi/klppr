@@ -1,0 +1,16 @@
+
+* wep app to store/serve camera IP address
+
+* Android app sending JSON location over UDP
+
+* camera driver stub (login, pantilt, etc.)
+
+* non-polling location providers
+
+* tests for various location providers
+
+* add location provider to config file
+
+* add camera driver config file
+
+* Python3
