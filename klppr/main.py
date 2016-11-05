@@ -10,6 +10,7 @@ from kivy.app import App
 from screen import CameraScreen, GpsScreen, RecordScreen
 from kivy.utils import platform
 from kivy.uix.screenmanager import ScreenManager
+from kivy import Logger
 
 from service.connector import OscConnector
 
@@ -45,11 +46,13 @@ class KlpprApp(App):
         return sm
 
     def start_service(self):
-        if platform() == 'android':
+        if platform == 'android':
             from android import AndroidService
-            service = AndroidService('camera service', 'running')
+            service = AndroidService('klppr service', 'running')
             service.start('service started')
-            self.service = service        
+            self.service = service
+        else:
+            Logger.info('Starting service')
 
     def stop_service(self):
         if self.service:

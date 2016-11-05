@@ -1,66 +1,57 @@
 
+import json
+
 from kivy.event import EventDispatcher
 from kivy.logger import Logger
-from kivy.properties import ObjectProperty,StringProperty,NumericProperty
+from kivy.properties import ObjectProperty, StringProperty, NumericProperty
 
-
-# needs gps_improvements branch to get location accuracy reports
-# see https://github.com/lipi/plyer/tree/gps_improvements
-try:
-    from plyer import gps
-except ImportError:
-    print 'GPS module is not available'
-
-from klppr.location import Location
+from kivy.clock import Clock
 
 
 class LocationService(EventDispatcher):
     """
-    Receive location updates.
-    Store location as property, to allow registering callbacks.
+    Receive location updates from GPS.
+    Store location tuple as property, to allow registering callbacks.
     """
 
-    gps_location = ObjectProperty()
-    gps_accuracy = NumericProperty()
-    gps_status = StringProperty()
+    location = ObjectProperty()
+    accuracy = NumericProperty()
+    status = StringProperty()
 
     def __init__(self):
         try:
+            from plyer import gps
             # initialize GPS
             self.gps = gps
-            self.gps.configure(on_location=self.on_location,
-                               on_status=self.on_status)
+            self.gps.configure(on_location=self.update_location,
+                               on_status=self.update_status)
             self.gps.start()
+        except ImportError:
+            print 'GPS module is not available'
         except NotImplementedError:
-            self.gps_status = 'GPS is not implemented for your platform'
-            Logger.debug(self.gps_status)
+            self.status = 'GPS is not implemented for your platform'
+            Logger.debug(self.status)
+            # fake GPS
+            Clock.schedule_interval(self.check_location, 1.0)
 
-    def on_location(self, **kwargs):
-        # TODO: duplicate calls -- check providers in plyer/android/gps
-        self.gps_location = Location(kwargs['lat'],
-                                     kwargs['lon'],
-                                     kwargs['altitude'])
+    def check_location(self, dt):
+        print('Checking location...')
+        with open('location.json', 'rb') as loc_file:
+            loc = json.load(loc_file)
+            self.update_location(loc)
+
+    def update_location(self, **kwargs):
+        # TODO: use Location class
+        self.location = (kwargs['lat'], kwargs['lon'], kwargs['altitude'])
         try:
-            self.gps_accuracy = kwargs['accuracy']
+            self.accuracy = kwargs['accuracy']
         except KeyError:
-            self.gps_accuracy = 0
-        Logger.debug('location: %s' % self.gps_location)
+            # pre-kivy-1.9
+            self.accuracy = 0
+        Logger.info('location: %s %s' % (self.__class__.__name__,
+                                         str(self.location)))
 
-    def on_status(self, stype, status):
-        self.gps_status = 'type={}\n{}'.format(stype, status)
-        Logger.debug(self.gps_status)
+    def update_status(self, stype, status):
+        self.status = 'type={}\n{}'.format(stype, status)
+        Logger.debug(self.status)
 
-
-class LocationServiceOsc(LocationService):
-    """
-    LocationService with OSC interface
-    """
-    def __init__(self, connector, **kwargs):
-        super(LocationServiceOsc, self).__init__(**kwargs)
-        self.connector = connector
-
-    def on_location(self, **kwargs):
-        super(LocationServiceOsc, self).on_location(**kwargs)
-        loc = self.gps_location
-        self.connector.send('/location', (loc.latitude, loc.longitude, loc.altitude))
-        self.connector.send('/accuracy', self.gps_accuracy)

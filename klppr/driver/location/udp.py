@@ -32,14 +32,19 @@ class UdpHandler(SocketServer.BaseRequestHandler):
 
 
 class UdpLocationProvider(object):
+    """
+    Sends location updates based on JSON data received on UDP
+    """
 
-    def __init__(self):
+    def __init__(self, host, port):
+
         # avoid duplicate entries
         logger.propagate = False
 
         self.location = Location()
-        host, port = "localhost", 9999
-        server = SocketServer.UDPServer((host, port), UdpHandler)
+        self.host = host
+        self.port = port
+        server = SocketServer.UDPServer((self.host, self.port), UdpHandler)
 
         dispatcher.connect(receiver=self.on_location_update,
                            signal='location-update',

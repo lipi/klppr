@@ -1,15 +1,13 @@
 
-from PIL import Image as PilImage
-from StringIO import StringIO
 import pickle
 
 import kivy
 kivy.require('1.8.0')  # replace with your current kivy version !
-from kivy.graphics.texture import Texture
 from kivy.properties import ObjectProperty, BooleanProperty
 from kivy.properties import StringProperty
 from kivy.logger import Logger
 from kivy.uix.screenmanager import Screen
+
 
 class GpsScreen(Screen):
     """
@@ -35,7 +33,7 @@ class GpsScreen(Screen):
         Update our pan/tilt/zoom values based on camera's
         """
         location = pickle.loads(message[2])
-        Logger.info('location: %d,%d,%d' % location)
+        Logger.info('location: %f,%f,%f' % location)
         self.current_location = "%f\n%f\n%.1f" % location
 
     def receive_accuracy(self, message, *args):
@@ -125,28 +123,7 @@ class CameraScreen(Screen):
         """
         Receive preview image and blit it to the preview surface.
         """
-        try:
-            jpg = message[2]
-        except Exception as ex:
-            Logger.debug('receive_jpg: {0}'. format(ex))
-            return
-
-        self.connected = True
-        self.update_status_label(self.connected, self.previewing)
-
-        img = PilImage.open(StringIO(jpg))
-        # not clear why (standard?), but the image is upside down
-        img = img.transpose(PilImage.FLIP_TOP_BOTTOM)
-
-        # image buffer is RGB, convert it to RGBA (Nexus 4 can't blit RGB),
-        # see https://github.com/kivy/kivy/issues/1600
-        # img = PilImage.fromstring('RGB', self.imgsize, self.imgbuf)
-        img.putalpha(255)
-        buf = img.tostring()
-        tex = Texture.create(size=img.size, colorfmt='rgba')
-        tex.blit_buffer(buf, colorfmt='rgba', bufferfmt='ubyte')
-        self.image.texture = tex
-        self.image.allow_stretch = True
+        pass
 
     def receive_ptz(self, message, *args):
         """

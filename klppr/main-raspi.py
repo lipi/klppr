@@ -30,7 +30,8 @@ def run():
                     location_provider=camera_location)
 
     # change subject location via editing subject.json
-    subject_location = FakeLocationProvider('subject-location.json')
+    #subject_location = FakeLocationProvider('subject-location.json')
+    subject_location = UdpLocationProvider('0.0.0.0', 2222)
     subject = Subject(location_provider=subject_location)
 
     tracker = Tracker(camera=camera,

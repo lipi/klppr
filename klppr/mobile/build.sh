@@ -4,12 +4,12 @@
 #
 
 p4a apk \
---private ./klppr \
+--private $HOME/git/klppr/klppr/mobile/ \
 --package=com.klppr.mobile \
 --name "klppr" \
 --version 0.1 \
 --bootstrap=pygame \
---requirements=python2,kivy,plyer,requests \
+--requirements=python2,kivy,plyer \
 --arch=armeabi-v7a \
 --permission INTERNET \
 --permission ACCESS_FINE_LOCATION \
