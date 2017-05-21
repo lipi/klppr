@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+# Dynamic DNS updater
+#
+
+RESOURCE_ID=7045502
+DOMAIN_ID=97220
+API_KEY=POJElDFkd3JoegVmrzDmRt0HsQYbiHcjEnJktLAhCOlbZHYCBXMjbq2MQjr1cXOo
+
+WAN_IP=$(ifconfig ppp0 | awk '/inet addr/ {print substr($2, 6)}')
+
+if [ -f $HOME/.wan_ip.txt ]; then
+        OLD_WAN_IP=`cat $HOME/.wan_ip.txt`
+else
+        echo "No file, need IP"
+        OLD_WAN_IP=""
+fi
+
+if [ "$WAN_IP" = "$OLD_WAN_IP" ]; then
+        echo "IP Unchanged"
+else
+        echo $WAN_IP > $HOME/.wan_ip.txt
+        echo "Updating DNS to $WAN_IP"
+        curl -s https://api.linode.com/?api_key="$API_KEY"\&api_action=domain.resource.update\&DomainID="$DOMAIN_ID"\&ResourceID="$RESOURCE_ID"\&Target="$WAN_IP" > /dev/null
+fi
+
+

@@ -1,0 +1,6 @@
+connect "/usr/sbin/chat -v -f /etc/chatscripts/gprs -T internet"
+/dev/ttyUSB0
+persist
+noauth
+usepeerdns
+defaultroute
